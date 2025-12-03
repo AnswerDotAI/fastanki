@@ -6,7 +6,7 @@
 __all__ = ['data_path', 'profiles', 'close_all', 'Deck', 'add_card', 'add_fb_card', 'find_cards', 'find_card_ids', 'find_notes',
            'find_note_ids', 'update_note', 'update_fb_note', 'get_note', 'del_card', 'sync', 'anki_tools']
 
-# %% ../nbs/00_core.ipynb 2
+# %% ../nbs/00_core.ipynb
 import platform,gc
 from fastcore.utils import *
 from contextlib import closing
@@ -24,7 +24,7 @@ from anki.cards import Card
 from anki.notes import Note
 from anki.collection_pb2 import OpChangesWithCount
 
-# %% ../nbs/00_core.ipynb 5
+# %% ../nbs/00_core.ipynb
 def data_path():
     "Return the default Anki data folder for this OS."
     syst = platform.system()
@@ -33,18 +33,18 @@ def data_path():
         else 'Library/Application Support/Anki2' if syst=='Darwin'
         else 'Anki2')
 
-# %% ../nbs/00_core.ipynb 7
+# %% ../nbs/00_core.ipynb
 def profiles():
     "List available Anki profile names."
     dp = data_path()
     if not dp.exists(): return []
     return [p.name for p in dp.iterdir() if (p/'collection.anki2').exists()]
 
-# %% ../nbs/00_core.ipynb 9
+# %% ../nbs/00_core.ipynb
 # quiet down latency complaints
 _backend.main_thread = lambda: None
 
-# %% ../nbs/00_core.ipynb 10
+# %% ../nbs/00_core.ipynb
 @patch(cls_method=True)
 def open(cls:Collection, profile='User 1'):
     "Open a collection by profile name (creates if needed)."
@@ -57,7 +57,7 @@ def open(cls:Collection, profile='User 1'):
     col.profile_path = path
     return col
 
-# %% ../nbs/00_core.ipynb 13
+# %% ../nbs/00_core.ipynb
 @patch(as_prop=True)
 def _auth_path(self:Collection): return self.profile_path / 'sync_auth.bin'
 
@@ -75,7 +75,7 @@ def load_auth(self:Collection):
     auth.ParseFromString(p.read_bytes())
     return auth
 
-# %% ../nbs/00_core.ipynb 15
+# %% ../nbs/00_core.ipynb
 @patch
 def sync(self:Collection, user=None, passw=None, media=True):
     auth = self.load_auth()
@@ -100,7 +100,7 @@ def sync(self:Collection, user=None, passw=None, media=True):
         self.reopen(after_full_sync=True)
     return result
 
-# %% ../nbs/00_core.ipynb 18
+# %% ../nbs/00_core.ipynb
 def close_all():
     "Close all open Anki backends (nuclear option for crash recovery)."
     for obj in gc.get_objects():
@@ -108,14 +108,14 @@ def close_all():
             try: obj.close_collection(downgrade_to_schema11=False)
             except: pass
 
-# %% ../nbs/00_core.ipynb 20
+# %% ../nbs/00_core.ipynb
 @patch
 def _repr_markdown_(self:ModelManager): return '\n'.join('- '+m.name for m in self.all_names_and_ids())
 
 @patch
 def _repr_markdown_(self:NotetypeNameId): return f"**{self.name}** (id: {self.id})"
 
-# %% ../nbs/00_core.ipynb 22
+# %% ../nbs/00_core.ipynb
 @patch
 def _repr_markdown_(self:DeckManager): return '\n'.join('- '+d.name for d in self.all_names_and_ids())
 
@@ -126,10 +126,10 @@ def _repr_markdown_(self:DeckNameId): return f"**{self.name}** (id: {self.id})"
 def _repr_markdown_(self:DeckTreeNode):
     return f"**{self.name}**: {self.new_count} new, {self.learn_count} learn, {self.review_count} review"
 
-# %% ../nbs/00_core.ipynb 27
+# %% ../nbs/00_core.ipynb
 ModelManager.__getitem__ = ModelManager.by_name
 
-# %% ../nbs/00_core.ipynb 29
+# %% ../nbs/00_core.ipynb
 @patch
 def _repr_markdown_(self:Note):
     fields = ' | '.join(f"**{k}**: {self[k]}" for k in self._fmap)
@@ -140,11 +140,11 @@ def __repr__(self:Note):
     fields = ', '.join(f"{k}={self[k]!r}" for k in self._fmap)
     return f"Note({self.id}, {fields}, tags={self.tags})"
 
-# %% ../nbs/00_core.ipynb 31
+# %% ../nbs/00_core.ipynb
 @patch
 def _repr_markdown_(self:OpChangesWithCount): return f"✓ {self.count} change(s)"
 
-# %% ../nbs/00_core.ipynb 32
+# %% ../nbs/00_core.ipynb
 class Deck:
     def __init__(self, col, name):
         self.col, self.name = col, name
@@ -162,11 +162,11 @@ class Deck:
         n, l, r = self.due
         return f"**{self.name}**: {n} new, {l} learn, {r} review"
 
-# %% ../nbs/00_core.ipynb 34
+# %% ../nbs/00_core.ipynb
 @patch
 def __getitem__(self:DeckManager, name): return Deck(self.col, name)
 
-# %% ../nbs/00_core.ipynb 35
+# %% ../nbs/00_core.ipynb
 @patch
 def add(self:Collection, model='Basic', deck='Default', tags=None, **fields):
     "Add a note with the given fields."
@@ -177,13 +177,13 @@ def add(self:Collection, model='Basic', deck='Default', tags=None, **fields):
     if res.count == 0: raise ValueError("Failed to add note")
     return note
 
-# %% ../nbs/00_core.ipynb 38
+# %% ../nbs/00_core.ipynb
 @patch
 def add_deck(self:Collection, name):
     "Create a deck (use :: for nesting)."
     return self.decks.add_normal_deck_with_name(name)
 
-# %% ../nbs/00_core.ipynb 45
+# %% ../nbs/00_core.ipynb
 @patch
 def __repr__(self:ModelManager): return f"ModelManager({[m.name for m in self.all_names_and_ids()]})"
 
@@ -209,49 +209,49 @@ def __repr__(self:Card): return f"Card({self.id}, nid={self.nid}, due={self.due}
 @patch
 def __repr__(self:Deck): return f"Deck({self.name!r}, id={self.id})"
 
-# %% ../nbs/00_core.ipynb 48
+# %% ../nbs/00_core.ipynb
 @patch
 def __enter__(self:Collection): return self
 
 @patch
 def __exit__(self:Collection, *args): self.close()
 
-# %% ../nbs/00_core.ipynb 51
+# %% ../nbs/00_core.ipynb
 def add_card(profile='User 1', model='Basic', deck='Default', tags=None, **fields):
     "Add a card."
     with Collection.open(profile) as col: return col.add(model=model, deck=deck, tags=tags or None, **fields)
 
-# %% ../nbs/00_core.ipynb 54
+# %% ../nbs/00_core.ipynb
 def add_fb_card(front:str, back:str, profile:str='User 1', model:str='Basic', deck:str='Default', tags:str=None):
     "Add a card with a `Front` and `Back` and return the id."
     return add_card(profile=profile, model=model, deck=deck, tags=tags, Front=front, Back=back).id
 
-# %% ../nbs/00_core.ipynb 55
+# %% ../nbs/00_core.ipynb
 def find_cards(query:str, profile:str='User 1'):
     "Find cards matching query string. Returns list of Note objects."
     with Collection.open(profile) as col: return [col.get_card(cid) for cid in col.find_cards(query)]
 
-# %% ../nbs/00_core.ipynb 58
+# %% ../nbs/00_core.ipynb
 @patch
 def _repr_markdown_(self:Card):
     return f"Card {self.id} (nid: {self.nid}, due: {self.due}, ivl: {self.ivl}d, queue: {self.queue})"
 
-# %% ../nbs/00_core.ipynb 60
+# %% ../nbs/00_core.ipynb
 def find_card_ids(query:str, profile:str='User 1'):
     "Find card ids matching query string."
     with Collection.open(profile) as col: return col.find_cards(query)
 
-# %% ../nbs/00_core.ipynb 62
+# %% ../nbs/00_core.ipynb
 def find_notes(query:str, profile:str='User 1'):
     "Find notes matching query string. Returns list of Note objects."
     with Collection.open(profile) as col: return [col.get_note(nid) for nid in col.find_notes(query)]
 
-# %% ../nbs/00_core.ipynb 66
+# %% ../nbs/00_core.ipynb
 def find_note_ids(query:str, profile:str='User 1'):
     "Find note ids matching query string."
     with Collection.open(profile) as col: return col.find_notes(query)
 
-# %% ../nbs/00_core.ipynb 68
+# %% ../nbs/00_core.ipynb
 def update_note(note:int, profile:str='User 1', tags:str=None, add_tags:str=None, **fields):
     "Update an existing note's fields and/or tags. Pass a Note object or note ID."
     with Collection.open(profile) as col:
@@ -262,7 +262,7 @@ def update_note(note:int, profile:str='User 1', tags:str=None, add_tags:str=None
         col.update_note(note)
         return note
 
-# %% ../nbs/00_core.ipynb 72
+# %% ../nbs/00_core.ipynb
 def update_fb_note(note_id:int, front:str='', back:str='', profile:str='User 1', tags:str=None, add_tags:str=None):
     "Update an existing note's front/back fields and/or tags. Pass a Note object or note ID."
     kw = {}
@@ -270,21 +270,21 @@ def update_fb_note(note_id:int, front:str='', back:str='', profile:str='User 1',
     if back: kw['Back'] = back
     return update_note(note_id, profile=profile, tags=tags, add_tags=add_tags, **kw)
 
-# %% ../nbs/00_core.ipynb 74
+# %% ../nbs/00_core.ipynb
 def get_note(note_id:int, profile:str='User 1'):
     "Retrieve a note by ID."
     with Collection.open(profile) as col: return col.get_note(note_id)
 
-# %% ../nbs/00_core.ipynb 76
+# %% ../nbs/00_core.ipynb
 def del_card(notes:int, profile:str='User 1'):
     "Delete card(s) by Note(s) or note id(s)."
     nids = [n if isinstance(n, int) else n.id for n in listify(notes)]
     with Collection.open(profile) as col: return col.remove_notes(nids)
 
-# %% ../nbs/00_core.ipynb 78
+# %% ../nbs/00_core.ipynb
 def sync(profile:str='User 1', user:str=None, passw:str=None, media:bool=True):
     "Sync collection, handling open/close automatically."
     with Collection.open(profile) as col: return col.sync(user=user, passw=passw, media=media)
 
-# %% ../nbs/00_core.ipynb 81
+# %% ../nbs/00_core.ipynb
 def anki_tools(): print('&`[add_fb_card, find_notes, find_note_ids, find_cards, find_card_ids, get_note, del_card, update_fb_note, sync]`')
