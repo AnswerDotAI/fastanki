@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "ankitools"
+  site-url: "https://AnswerDotAI.github.io/ankitools"
+  description: "Python tools for Anki"
+  repo-branch: main
+  repo-url: "https://github.com/AnswerDotAI/ankitools"
