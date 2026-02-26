@@ -231,7 +231,7 @@ def __enter__(self:Collection): return self
 def __exit__(self:Collection, *args): self.close()
 
 # %% ../nbs/00_core.ipynb #2dfdcae4
-def add_card(profile=None, model=None, deck=None, tags=None, **fields):
+def add_card(profile:str=None, model:str=None, deck:str=None, tags:list=None, **fields):
     "Add a card."
     profile, model, deck = profile or anki_defaults['profile'], model or anki_defaults['model'], deck or anki_defaults['deck']
     with Collection.open(profile) as col: return col.add(model=model, deck=deck, tags=tags or None, **fields)
@@ -313,7 +313,8 @@ def sync(profile:str=None, user:str=None, passw:str=None, media:bool=True):
 def anki_tools(): print('&`[add_fb_card, find_notes, find_note_ids, find_cards, find_card_ids, get_note, del_card, update_fb_note, sync]`')
 
 # %% ../nbs/00_core.ipynb #10db7bd5
-def add_cloze_card(text, deck='Default', tags=None, back_extra=''):
+def add_cloze_card(text:str, deck:str='Default', tags:list=None, back_extra=''):
     """Add a cloze deletion card."""
     note = add_card(model='Cloze', deck=deck, tags=tags, **{'Text': text, 'Back Extra': back_extra})
+
     return note.id
