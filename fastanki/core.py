@@ -81,12 +81,6 @@ def load_auth(self:Collection):
     auth.ParseFromString(p.read_bytes())
     return auth
 
-# %% ../nbs/00_core.ipynb #5c500890
-@patch
-def _repr_markdown_(self:SyncCollectionResponse):
-    req = self.ChangesRequired.DESCRIPTOR.values_by_number[self.required].name
-    return f"**Sync**: {req} (host: {self.host_number})"
-
 # %% ../nbs/00_core.ipynb #2ef240a4
 @patch
 def sync(self:Collection, user=None, passw=None, media=True, upload=False):
@@ -111,7 +105,14 @@ def sync(self:Collection, user=None, passw=None, media=True, upload=False):
         self.close_for_full_sync()
         self.full_upload_or_download(auth=auth, server_usn=result.server_media_usn, upload=do_upload)
         self.reopen(after_full_sync=True)
+    else: return status
     return result
+
+# %% ../nbs/00_core.ipynb #e5060b40
+@patch
+def _repr_markdown_(self:SyncCollectionResponse):
+    req = self.ChangesRequired.DESCRIPTOR.values_by_number[self.required].name
+    return f"**Sync**: {req or 'Normal'}"
 
 # %% ../nbs/00_core.ipynb #8d9cc09d
 def close_all():
