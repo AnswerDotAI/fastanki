@@ -28,4 +28,5 @@ version = {attr = "fastanki.__version__"}
 include = ["fastanki"]
 
 [tool.nbdev]
-allowed_metadata_keys = ['solveit_dialog_mode', 'solveit_ver']
+allowed_metadata_keys = ['solveit']
+allowed_cell_metadata_keys = ['solveit_ai']
