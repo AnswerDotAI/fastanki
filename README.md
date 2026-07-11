@@ -27,25 +27,20 @@ passw = os.environ['ANKI_PASS']
 
 ## Functional API
 
-[`add_card`](https://AnswerDotAI.github.io/fastanki/core.html#add_card)
-lets you create a new card with a single function call. Just pass your
-field values as keyword arguments. By default it uses the Basic note
-type and Default deck, but you can specify any model, deck, or tags you
-like.
+[`add_card`](https://AnswerDotAI.github.io/fastanki/core.html#add_card) lets you create a new card with a single function call. Just pass your field values as keyword arguments. By default it uses the Basic note type and Default deck, but you can specify any model, deck, or tags you like.
 
 ``` python
 notezh = add_card(Front='你好', Back='hello')
 ```
 
-[`find_cards`](https://AnswerDotAI.github.io/fastanki/core.html#find_cards)
-searches your collection and returns a list of `Card` objects. Pass any
-Anki search query as the first argument. Common query patterns: -
-`deck:Spanish` — cards in a specific deck - `tag:vocab` — cards with a
-tag - `front:hello` — match field content - `is:due` — cards due for
-review - `added:7` — added in the last 7 days
+[`find_cards`](https://AnswerDotAI.github.io/fastanki/core.html#find_cards) searches your collection and returns a list of `Card` objects. Pass any Anki search query as the first argument. Common query patterns:
+- `deck:Spanish` — cards in a specific deck
+- `tag:vocab` — cards with a tag
+- `front:hello` — match field content
+- `is:due` — cards due for review
+- `added:7` — added in the last 7 days
 
-Combine with spaces (AND) or `OR`: `deck:Spanish tag:verb` finds Spanish
-cards tagged “verb”.
+Combine with spaces (AND) or `OR`: `deck:Spanish tag:verb` finds Spanish cards tagged “verb”.
 
 ``` python
 cards = find_cards("deck:Default")
@@ -66,16 +61,7 @@ find_card_ids("deck:Default")
 
     [1764738198390]
 
-[`find_notes`](https://AnswerDotAI.github.io/fastanki/core.html#find_notes)
-searches your collection and returns a list of `Note` objects (rather
-than `Card` objects). The query language is the same as
-[`find_cards`](https://AnswerDotAI.github.io/fastanki/core.html#find_cards)
-— all the same search patterns work. The difference is that
-[`find_notes`](https://AnswerDotAI.github.io/fastanki/core.html#find_notes)
-returns one result per note, while
-[`find_cards`](https://AnswerDotAI.github.io/fastanki/core.html#find_cards)
-may return multiple cards if a note generates more than one card (e.g.,
-with Cloze or Basic-and-Reversed note types).
+[`find_notes`](https://AnswerDotAI.github.io/fastanki/core.html#find_notes) searches your collection and returns a list of `Note` objects (rather than `Card` objects). The query language is the same as [`find_cards`](https://AnswerDotAI.github.io/fastanki/core.html#find_cards) — all the same search patterns work. The difference is that [`find_notes`](https://AnswerDotAI.github.io/fastanki/core.html#find_notes) returns one result per note, while [`find_cards`](https://AnswerDotAI.github.io/fastanki/core.html#find_cards) may return multiple cards if a note generates more than one card (e.g., with Cloze or Basic-and-Reversed note types).
 
 ``` python
 notes = find_notes("hello")
@@ -97,11 +83,9 @@ find_note_ids("hello")
 
     [1764738198390]
 
-[`update_note`](https://AnswerDotAI.github.io/fastanki/core.html#update_note)
-modifies an existing note’s fields and/or tags. Pass either a `Note`
-object or a note ID, along with any fields you want to change as keyword
-arguments. For tags: - `tags=['a','b']` — replaces all tags -
-`add_tags='newtag'` — adds without removing existing tags
+[`update_note`](https://AnswerDotAI.github.io/fastanki/core.html#update_note) modifies an existing note’s fields and/or tags. Pass either a `Note` object or a note ID, along with any fields you want to change as keyword arguments. For tags:
+- `tags=['a','b']` — replaces all tags
+- `add_tags='newtag'` — adds without removing existing tags
 
 ``` python
 update_note(note, Back="updated answer", tags='testtag')
@@ -127,11 +111,7 @@ del_card([notezh, note])
 
 ✓ 1 change(s)
 
-[`sync`](https://AnswerDotAI.github.io/fastanki/core.html#sync) handles
-the entire sync lifecycle for you — opening the collection,
-authenticating with AnkiWeb, syncing, and closing up afterwards. The
-first time you sync, pass your AnkiWeb credentials; they’ll be saved for
-future use.
+[`sync`](https://AnswerDotAI.github.io/fastanki/core.html#sync) handles the entire sync lifecycle for you — opening the collection, authenticating with AnkiWeb, syncing, and closing up afterwards. The first time you sync, pass your AnkiWeb credentials; they’ll be saved for future use.
 
 ``` python
 sync(user=user, passw=passw) # First time
@@ -181,10 +161,7 @@ Here’s what I found in your collection:
 | 1764724348705 | What is the capital of France? | Paris | (none) |
 | 1764724348737 | What is the capital of France? | Paris | (none) |
 
-You have 2 notes, and interestingly they appear to be duplicates — both
-have the same question and answer about the capital of France. Would you
-like to remove one of them, or is there something else you’d like to do
-with your collection?
+You have 2 notes, and interestingly they appear to be duplicates — both have the same question and answer about the capital of France. Would you like to remove one of them, or is there something else you’d like to do with your collection?
 
 Delete them.
 
@@ -226,9 +203,7 @@ Delete them.
 
 </details>
 
-Done! Both notes have been deleted (2 changes total). Your collection
-should now be empty. Would you like to add some new cards or do
-something else?
+Done! Both notes have been deleted (2 changes total). Your collection should now be empty. Would you like to add some new cards or do something else?
 
 Try finding all notes again.
 
@@ -253,12 +228,9 @@ Try finding all notes again.
 
 </details>
 
-The collection is now empty — no notes found. Ready for a fresh start!
-What would you like to add?
+The collection is now empty — no notes found. Ready for a fresh start! What would you like to add?
 
-Try adding a note of your choice using
-[`add_fb_card`](https://AnswerDotAI.github.io/fastanki/core.html#add_fb_card)
-and tell me the id.
+Try adding a note of your choice using [`add_fb_card`](https://AnswerDotAI.github.io/fastanki/core.html#add_fb_card) and tell me the id.
 
 ##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
 
@@ -282,8 +254,7 @@ and tell me the id.
 
 </details>
 
-Done! I added a physics flashcard about the speed of light. The note ID
-is **1764727897520**.
+Done! I added a physics flashcard about the speed of light. The note ID is **1764727897520**.
 
 Would you like to add more cards, or do something else with this one?
 
@@ -318,9 +289,7 @@ There’s now 1 note in your collection:
 
 What would you like to do next?
 
-OK try
-[`get_note`](https://AnswerDotAI.github.io/fastanki/core.html#get_note)
-with it.
+OK try [`get_note`](https://AnswerDotAI.github.io/fastanki/core.html#get_note) with it.
 
 ##### 🤖Reply🤖<!-- SOLVEIT_SEPARATOR_7f3a9b2c -->
 
@@ -347,12 +316,10 @@ It works! The note comes back as a `Note` object with:
 
 - **ID**: 1764727897520
 - **Front**: What is the speed of light in a vacuum?
-- **Back**: Approximately 299,792,458 meters per second (about 3 × 10⁸
-  m/s)
+- **Back**: Approximately 299,792,458 meters per second (about 3 × 10⁸ m/s)
 - **Tags**: \[\] (empty)
 
-The serialization looks clean — the `__repr__` method you defined
-earlier is being used. Anything else you’d like to test?
+The serialization looks clean — the `__repr__` method you defined earlier is being used. Anything else you’d like to test?
 
 Delete it now.
 
@@ -442,11 +409,8 @@ OK create, update, and verify a note now.
 All working! Here’s what happened:
 
 1.  **Added** a card with Front=“What is H₂O?” and Back=“Water”
-2.  **Updated** the back to “Water (the chemical formula for water)” and
-    added the tag “chemistry”
-3.  **Verified** with
-    [`get_note`](https://AnswerDotAI.github.io/fastanki/core.html#get_note)
-    — the changes persisted
+2.  **Updated** the back to “Water (the chemical formula for water)” and added the tag “chemistry”
+3.  **Verified** with [`get_note`](https://AnswerDotAI.github.io/fastanki/core.html#get_note) — the changes persisted
 
 The note ID is **1764731543071**. What would you like to test next?
 
@@ -516,13 +480,9 @@ All three work! Here’s the comparison:
 | `find_cards("*")` | `Card(1764731543071, nid=1764731543071, due=47, ivl=0, queue=0)` — full Card object with scheduling info |
 | `find_card_ids("*")` | `[1764731543071]` — just the card ID |
 
-Interesting that in this case the note ID and card ID happen to be the
-same (1764731543071). That’s because with a Basic note type, there’s
-exactly one card per note.
+Interesting that in this case the note ID and card ID happen to be the same (1764731543071). That’s because with a Basic note type, there’s exactly one card per note.
 
-That just leaves
-**[`sync`](https://AnswerDotAI.github.io/fastanki/core.html#sync)** —
-want me to try that too?
+That just leaves **[`sync`](https://AnswerDotAI.github.io/fastanki/core.html#sync)** — want me to try that too?
 
 Sure. Delete that note, then sync.
 
