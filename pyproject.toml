@@ -7,12 +7,16 @@ name = "fastanki"
 dynamic = ["version"]
 description = "Python tools for Anki"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 license = {text = "Apache-2.0"}
 authors = [{name = "Jeremy Howard", email = "github@jhoward.fastmail.fm"}]
 keywords = ['nbdev', 'jupyter', 'notebook', 'python']
 classifiers = ["Natural Language :: English", "Intended Audience :: Developers", "Development Status :: 3 - Alpha", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3 :: Only"]
-dependencies = ['fastcore', 'anki']
+dependencies = ['fastcore', 'httpx', 'zstandard', 'protobuf>=6.31', 'apsw']
+
+[project.optional-dependencies]
+dev = ['anki', 'pytest', 'pytest-timeout', 'toolslm']
+
 
 [project.urls]
 Repository = "https://github.com/AnswerDotAI/fastanki"
@@ -25,7 +29,10 @@ fastanki = "fastanki._modidx:d"
 version = {attr = "fastanki.__version__"}
 
 [tool.setuptools.packages.find]
-include = ["fastanki"]
+include = ["fastanki*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.nbdev]
 allowed_metadata_keys = ['solveit']
