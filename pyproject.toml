@@ -25,6 +25,9 @@ Documentation = "https://AnswerDotAI.github.io/fastanki"
 [project.entry-points.nbdev]
 fastanki = "fastanki._modidx:d"
 
+[project.entry-points.pyskills]
+fastanki = "fastanki.skill"
+
 [tool.setuptools.dynamic]
 version = {attr = "fastanki.__version__"}
 
