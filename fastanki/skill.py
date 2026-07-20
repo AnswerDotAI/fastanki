@@ -4,6 +4,9 @@ fastanki reads and writes Anki's collection format and speaks the AnkiWeb sync p
 directly in Python. Cards live in a local sqlite file and reach desktop/phone via AnkiWeb
 sync. Media files aren't synced yet — create text-only cards.
 
+Importing this module also calls `allow({'fastanki.*': ...})`, so effect-gating sandboxes
+built on the pyskills registry (such as safepyrun) trust fastanki's own operations.
+
 ## Workflow
 
 - `add_fb_card(Front='...', Back='...')` — create a Basic card (use `deck=`, `tags=`, `model=` to customize)
@@ -85,5 +88,8 @@ The student corrected a proposal to combine two rules into one card:
 """
 
 from fastanki.core import *
+from pyskills import allow
 
 __all__ = ['add_fb_card', 'find_notes', 'find_note_ids', 'find_cards', 'find_card_ids', 'get_note', 'del_card', 'update_fb_note', 'sync']
+
+allow({'fastanki.*': ...})
