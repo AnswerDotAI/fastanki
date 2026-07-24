@@ -98,6 +98,47 @@ def test_round_trip(server, tmp_path):
     col.close()
     assert ok
 
+def test_review_sync(server, tmp_path):
+    "Reviews made in fastanki reach other clients through the sync server: card state, revlog, and daily counters"
+    ep = server
+    a = Collection.open(tmp_path/'a'/'collection.anki2')
+    n = a.add(Front='study', Back='me')
+    cid = a.find_card_ids()[0]
+    a.answer_card(cid, 3, taken_ms=1234)
+    a.answer_card(cid, 3)                      # graduates to a 1-day review card
+    assert a.sync(user='tester', passw='s3kret', endpoint=ep, upload=True) == 'full sync'
+    a.answer_card(cid, 1)                      # a lapse afterwards, delta-synced
+    assert a.sync() == 'success'
+
+    b = Collection.open(tmp_path/'b'/'collection.anki2')
+    assert b.sync(user='tester', passw='s3kret', endpoint=ep) == 'full sync'
+    assert [tuple(r) for r in b.q('select ease, type from revlog where cid=? order by id', cid)] == [(3,0),(3,0),(1,1)]
+    c = b.find_cards(Front='study')[0]
+    assert (c.type, c.queue, c.lapses) == (3, 1, 1)   # mid-relearning, intraday
+
+    from fastanki._proto import decks_pb2
+    cmn = decks_pb2.Deck.Common()
+    cmn.ParseFromString(b.q1('select common from decks where id=1'))
+    assert (cmn.new_studied, cmn.review_studied) == (1, 1)
+    assert cmn.milliseconds_studied >= 1234
+
+    # the other direction: b finishes relearning, and a picks it up by delta
+    b.answer_card(cid, 3)
+    assert b.sync() == 'success'
+    assert a.sync() == 'success'
+    assert a.q1('select count(*) from revlog where cid=?', cid) == 4
+    assert a.q1('select type from cards where id=?', cid) == 2
+
+    # and desktop Anki accepts the reviewed collection wholesale
+    b.close()
+    oc = AnkiCollection(str(b.path))
+    ok = oc.fix_integrity()[1]
+    assert oc.db.execute('select count(*) from revlog')[0][0] == 4
+    oc.close()
+    a.close()
+    assert ok
+
+
 # ---- fastanki-on-both-ends: conflict merge and full-sync bookkeeping ----
 
 def _up(col, ep): return col.sync(user='tester', passw='s3kret', endpoint=ep, upload=True)
@@ -224,7 +265,8 @@ def test_tool_schemas():
     from toolslm.funccall import get_schema
     tools = [fastanki.add_card, fastanki.add_fb_card, fastanki.add_cloze_card, fastanki.find_notes,
              fastanki.find_note_ids, fastanki.find_cards, fastanki.find_card_ids, fastanki.get_note,
-             fastanki.del_note, fastanki.update_fb_note, fastanki.sync]
+             fastanki.del_note, fastanki.update_fb_note, fastanki.next_card, fastanki.answer_buttons,
+             fastanki.answer_card, fastanki.due_counts, fastanki.sync]
     for f in tools:
         props = get_schema(f)['input_schema']['properties']   # raises if a param can't be schema'd
         assert props and all(v.get('description') for v in props.values()), f.__name__

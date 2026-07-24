@@ -9,9 +9,11 @@ This is an nbdev project. The notebooks in `nbs/` are the source of truth, and `
 - `00_schema.ipynb` (`schema.py`): the sqlite file format. Schema 18 DDL, the `unicase` collation, timestamps and id allocation, the default deck and deck config, the Basic and Cloze notetypes, and `create_collection`.
 - `01_collection.ipynb` (`collection.py`): the `Collection` class. Notes, cards, decks, card generation, search, due counts, and the checksum, guid, and HTML stripping utilities Anki uses to fingerprint notes.
 - `02_syncer.ipynb` (`syncer.py`): the AnkiWeb client. Login, the delta sync state machine, schema 11 conversions, full upload and download, and auth storage.
-- `03_core.ipynb` (`core.py`): the functional API (`add_card`, `find_notes`, `sync`, etc). Each function opens the default collection, does its work, and closes. `anki_tools` exposes these as LLM tools.
+- `03_fsrs.ipynb` (`fsrs.py`): the FSRS-6 memory model, a pure port of the scheduling half of the `fsrs-rs` crate Anki embeds: parameter upgrading/clipping (17/19/21-length sets), the forgetting curve, memory-state updates, and the SM-2 approximation for truncated histories. No card or collection knowledge.
+- `04_scheduler.ipynb` (`scheduler.py`): reviewing. The v3 scheduler state machine (new/learning/review/relearning, SM-2 and FSRS), interval fuzz, `answer_card` with its revlog/counter/leech bookkeeping, `answer_buttons`, and a simplified `next_card` queue with daily limits and sibling burying.
+- `05_core.ipynb` (`core.py`): the functional API (`add_card`, `find_notes`, `sync`, etc). Each function opens the default collection, does its work, and closes. `anki_tools` exposes these as LLM tools.
 
-`fastanki/_proto/` is not generated from a notebook. It contains protobuf modules copied from the `anki` wheel with imports rewritten, and can be refreshed the same way from a newer wheel if needed. `tests/test_sync.py` is the end to end sync test, described below. `anki/` (gitignored) is a clone of the Anki source, kept for reference. When a protocol question comes up, the answer is in `anki/rslib/src/sync/`.
+`fastanki/_proto/` is not generated from a notebook. It contains protobuf modules copied from the `anki` wheel with imports rewritten, and can be refreshed the same way from a newer wheel if needed. `tests/test_sync.py` is the end to end sync test, described below. `anki/` (gitignored) is a clone of the Anki source, kept for reference. When a protocol question comes up, the answer is in `anki/rslib/src/sync/`; for scheduling, `anki/rslib/src/scheduler/` and the `fsrs-rs/` clone (also gitignored).
 
 ## Design
 
@@ -50,6 +52,9 @@ Hard-won facts worth keeping. When a protocol question comes up the answer is in
 - `config.curModel` is a per-collection notetype id (a timestamp), so exclude it when comparing the `config` table against the oracle.
 - The AnkiWeb sync client lives in `syncer.py` (module `fastanki.syncer`), named so it doesn't collide with core's top-level `sync` function; `from fastanki import *` exposes both, and `SyncServer`/`sync_collection`/etc. come from `fastanki.syncer`.
 - `apsw` (not stdlib `sqlite3`): connections have no `.commit()`/`.rollback()` (autocommit unless inside an explicit transaction), `execute` runs multiple statements so there is no `executescript`, and double-quoted strings are disabled, so SQL string literals must use single quotes. Mutations go through `Collection._tx()`; sync uses explicit `BEGIN IMMEDIATE`/`COMMIT`/`ROLLBACK`. The busy timeout is set before the WAL pragma, else concurrent opens hit `BusyError` on the journal-mode switch.
+- Scheduling gotchas, learned porting `rslib/src/scheduler/` for `04_scheduler.ipynb`: `ANKI_TEST_MODE=1` (set before the `anki` package first computes states) disables the oracle's interval fuzz, which is what makes exact scheduling comparisons possible. Fuzz is seeded per `(card_id + reps)`, but Anki seeds Rust's ChaCha12 and we seed Python's Mersenne twister, so the two pick different (equally valid) points inside identical fuzz bounds; everything else is deterministic. Anki computes in f32: keep the protobuf floats raw (1.3 is really 1.2999999523) and round half-away-from-zero (`_round`), or intervals drift by a day at rounding boundaries.
+- fsrs-rs version matters: Anki 26.05 pins fsrs 6.6.1, whose same-day (short-term) stability floors the multiplier at 1 for Good/Easy only; 6.6.2+ floors Hard too. We match 6.6.1 -- the twin-collection oracle test caught this, and it's the arbiter if the pin moves.
+- The `cards.data` JSON carries `pos` (original new-queue position), `lrt` (last review time), and under FSRS `s`/`d`/`dr`/`decay`, rounded to 4/3/2/3 decimal places respectively. Anki clears `s`/`d`/`dr` when answering with FSRS off but leaves `decay` alone.
 
 ## Not implemented
 
@@ -57,4 +62,4 @@ Media sync is a separate protocol and is skipped entirely. That is safe, because
 
 Filtered decks aren't supported. The schema 11 conversions assert if they meet one, so syncing such a collection fails rather than corrupting it.
 
-There is no scheduler. We count due cards but can't answer them. If reviewing is ever wanted, FSRS is available as a pure python package, so the Rust scheduler wouldn't need porting.
+The scheduler covers normal decks only: answering a card in a filtered deck raises. The `next_card` queue is a simplified port of Anki's v3 builder -- daily limits come from the named deck's preset rather than a per-subdeck limit tree, gathering is by due order, reviews precede new cards, and there is no display-order matrix. Those simplifications affect session ordering, never scheduling state, so they can be extended without compatibility concerns. The FSRS optimizer is deliberately absent: parameters arrive through deck-config sync, and users can optimize from Anki desktop (scheduling with synced-or-default parameters is exactly what AnkiWeb's own study feature does).

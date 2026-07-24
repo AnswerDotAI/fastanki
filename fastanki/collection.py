@@ -6,10 +6,11 @@ Docs: https://AnswerDotAI.github.io/fastanki/collection.html.md"""
 
 # %% auto #0
 __all__ = ['strip_html_media', 'field_csum', 'guid64', 'data_dir', 'Collection', 'NT', 'field_is_empty', 'renders_with_fields',
-           'Note', 'note_cards', 'Card']
+           'Note', 'note_cards', 'sched_timing', 'Card']
 
 # %% ../nbs/01_collection.ipynb #04a4306c
 import hashlib, html, random, time, json
+from datetime import datetime, timezone, timedelta
 from contextlib import contextmanager
 from fastcore.utils import *
 from .schema import *
@@ -279,6 +280,43 @@ def remove_deck(self:Collection, name):
         self._dirty()
     return len(dids)
 
+# %% ../nbs/01_collection.ipynb #9a3ad061
+@patch
+def conf(self:Collection, key, default=None):
+    "Retrieve `key`'s value from the config table, or `default` if absent"
+    return default if (v := self.q1('select val from config where key=?', key)) is None else json.loads(v)
+
+def sched_timing(
+    crt,                # Collection creation stamp (epoch secs)
+    now,                # Current time (epoch secs)
+    crt_mins_west=None, # UTC offset at creation (`creationOffset` config; None = legacy collection)
+    now_mins_west=0,    # Current UTC offset, e.g. from `day_offset`
+    rollover=4,         # Hour of day when the next day starts
+):
+    "Anki's `(days_elapsed, next_day_at)`: the scheduler day counter and next rollover time"
+    ndt = datetime.fromtimestamp(now, timezone(timedelta(minutes=-now_mins_west)))
+    roll = ndt.replace(hour=rollover%24, minute=0, second=0, microsecond=0)
+    if crt_mins_west is None:
+        crt_roll = datetime.fromtimestamp(crt, ndt.tzinfo).replace(hour=rollover%24, minute=0, second=0, microsecond=0)
+        days = (now - int(crt_roll.timestamp()))//86400
+        passed = roll < ndt   # the legacy path holds the cutoff for the whole rollover second
+    else:
+        cdt = datetime.fromtimestamp(crt, timezone(timedelta(minutes=-crt_mins_west)))
+        passed = roll <= ndt
+        days = (ndt.date() - cdt.date()).days - (not passed)
+    return max(days,0), int(roll.timestamp()) + 86400*passed
+
+@patch
+def timing(self:Collection):
+    "`(days_elapsed, next_day_at)` for this collection, resolving its config"
+    return sched_timing(self.q1('select crt from col'), int(time.time()), self.conf('creationOffset'),
+                        day_offset(), min(self.conf('rollover',4),23))
+
+@patch
+def today(self:Collection):
+    "Days since collection creation, Anki's day counter"
+    return self.timing()[0]
+
 # %% ../nbs/01_collection.ipynb #f9bf6da1
 @patch
 def _find_sql(self:Collection, deck=None, tag=None, added_days=None, where=None, args=()):
@@ -312,14 +350,17 @@ def find_note_ids(self:Collection, **kw): return [n.id for n in self.find_notes(
 
 # %% ../nbs/01_collection.ipynb #2525e881
 class Card:
-    def __init__(self, id, nid, did, ord, mod, usn, type, queue, due, ivl): store_attr()
+    def __init__(self, id, nid, did, ord, mod, usn, type, queue, due, ivl, factor=0, reps=0, lapses=0, left=0, odue=0, odid=0, flags=0, data=""): store_attr()
     def __repr__(self): return f"Card({self.id}, nid={self.nid}, due={self.due}, ivl={self.ivl}, queue={self.queue})"
-    def _repr_markdown_(self): return f"Card {self.id} (nid: {self.nid}, due: {self.due}, ivl: {self.ivl}d, queue: {self.queue})"
-
-@patch
-def today(self:Collection):
-    "Days since collection creation, Anki's day counter"
-    return (int(time.time()) - self.q1('select crt from col'))//86400
+    def _repr_markdown_(self):
+        if self.queue==0: st = f'new #{self.due}'
+        elif self.queue==1:
+            secs = max(self.due-int(time.time()), 0)
+            st = f"learning, due in {f'{-(-secs//3600)}h' if secs>=3600 else f'{-(-secs//60)}m'}" if secs else 'learning, due now'
+        elif self.queue==3: st = f'learning, due day {self.due}'
+        elif self.queue==2: st = f'review, ivl {self.ivl}d, due day {self.due}'
+        else: st = {-1:'suspended'}.get(self.queue, 'buried')
+        return f"Card {self.id} (nid: {self.nid}): {st}"
 
 @patch
 def find_cards(self:Collection, deck=None, tag=None, added_days=None, is_due=None, where=None, args=(), **fields):
@@ -327,8 +368,10 @@ def find_cards(self:Collection, deck=None, tag=None, added_days=None, is_due=Non
     nids = None
     if fields: nids = {x.id for x in self.find_notes(deck=deck, tag=tag, added_days=added_days, **fields)}
     cond,ps = self._find_sql(deck, tag, added_days, where, args)
-    if is_due: cond += f' and (c.queue=1 and c.due<=? or c.queue in (2,3) and c.due<=?)'; ps += [int(time.time())+1200, self.today()]
-    sql = f'select c.id, c.nid, c.did, c.ord, c.mod, c.usn, c.type, c.queue, c.due, c.ivl from cards c join notes n on c.nid=n.id where {cond} order by c.id'
+    if is_due:
+        cond += f' and (c.queue=1 and c.due<=? or c.queue in (2,3) and c.due<=?)'
+        ps += [int(time.time())+self.conf('collapseTime',1200), self.today()]
+    sql = f'select c.* from cards c join notes n on c.nid=n.id where {cond} order by c.id'
     return [Card(*r) for r in self.q(sql, *ps) if nids is None or r[1] in nids]
 
 @patch
@@ -341,5 +384,5 @@ def due_counts(self:Collection, deck=None):
     cond,ps = self._find_sql(deck)
     sql = ('select sum(c.queue=0), sum(c.queue=1 and c.due<=? or c.queue=3 and c.due<=?), sum(c.queue=2 and c.due<=?) '
            f'from cards c join notes n on c.nid=n.id where {cond}')
-    r = self.q(sql, int(time.time())+1200, self.today(), self.today(), *ps)[0]
+    r = self.q(sql, int(time.time())+self.conf('collapseTime',1200), self.today(), self.today(), *ps)[0]
     return tuple(x or 0 for x in r)
