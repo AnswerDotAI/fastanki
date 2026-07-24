@@ -2,6 +2,14 @@
 
 <!-- do not remove -->
 
+## 0.0.4
+
+### New Features
+
+- Add media file sync: filename normalization, media db, zip wire format, and the full media sync state machine ([#11](https://github.com/AnswerDotAI/fastanki/issues/11))
+- Allow fastanki operations in pyskills sandboxes ([#10](https://github.com/AnswerDotAI/fastanki/issues/10))
+
+
 ## 0.0.3
 
 ### New Features
@@ -25,4 +33,3 @@
 ## 0.0.1
 
 - Init release
-
