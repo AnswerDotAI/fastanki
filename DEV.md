@@ -10,6 +10,7 @@ This is an nbdev project. The notebooks in `nbs/` are the source of truth, and `
 - `01_collection.ipynb` (`collection.py`): the `Collection` class. Notes, cards, decks, card generation, search, due counts, and the checksum, guid, and HTML stripping utilities Anki uses to fingerprint notes.
 - `02_syncer.ipynb` (`syncer.py`): the AnkiWeb client. Login, the delta sync state machine, schema 11 conversions, full upload and download, and auth storage.
 - `03_core.ipynb` (`core.py`): the functional API (`add_card`, `find_notes`, `sync`, etc). Each function opens the default collection, does its work, and closes. `anki_tools` exposes these as LLM tools.
+- `04_media.ipynb` (`media.py`): media files and the media sync protocol. Filename normalization, the media db and folder scan, the zip wire format, and the media sync state machine.
 
 `fastanki/_proto/` is not generated from a notebook. It contains protobuf modules copied from the `anki` wheel with imports rewritten, and can be refreshed the same way from a newer wheel if needed. `tests/test_sync.py` is the end to end sync test, described below. `anki/` (gitignored) is a clone of the Anki source, kept for reference. When a protocol question comes up, the answer is in `anki/rslib/src/sync/`.
 
@@ -25,6 +26,8 @@ Search is keyword arguments compiled to SQL: `deck=`, `tag=`, `added_days=`, `is
 
 The sync bookkeeping rules are: rows pending sync have `usn=-1`, and sending rewrites them to the server's usn. Deletions are recorded in `graves`. Every mutation bumps `col.mod`, which is how a sync knows there is work to do. All the mutating methods in `collection.py` follow these rules. The server compares object counts at the end of each sync (`sanityCheck2`), so a bookkeeping bug fails the sync instead of passing silently. On a sanity failure we bump `scm`, forcing the next sync to be a full one, which is Anki's own recovery path.
 
+Media is supported: `add_media` copies a file into the collection's media folder (`collection.media`, with sync state in `collection.mdb`), and `sync()` runs a media sync after the collection sync. Media sync is a protocol of its own (endpoints under `msync/`, its own usn sequence, no full-sync path), implemented in `media.py` against `anki/rslib/src/sync/media/` as reference. The old rule "never create notes that reference media we can't upload" is discharged: the name `add_media` returns is always syncable.
+
 A full upload replaces the server copy, and is the only operation here that can destroy remote data. So `sync()` never uploads unless called with `upload=True`, and even then it refuses to replace a non-empty server collection with an empty local one. Download has the mirror check. Before reading the file for upload we checkpoint the sqlite WAL, since otherwise the uploaded bytes are missing the most recent writes.
 
 Storage goes through `apsw` rather than the stdlib `sqlite3`, for explicit, composable transactions. Each mutating method runs inside `Collection._tx()`, a context manager that issues `BEGIN IMMEDIATE` at the outermost level and nests via savepoints, so `ts_id`'s read-then-insert id allocation is atomic across connections and processes (the functional API in `core.py` opens a connection per call, so two `add_card`s can race otherwise). Connections are set up with `apsw.bestpractice` functions (WAL, a busy timeout, and double-quoted-strings off), so every SQL string literal uses single quotes.
@@ -33,7 +36,7 @@ Storage goes through `apsw` rather than the stdlib `sqlite3`, for explicit, comp
 
 The `anki` package is a dev dependency and the tests use it as a reference implementation, in both directions. Files we create open cleanly in Anki, pass its `fix_integrity` check, and accept notes added through its API, and files Anki wrote are read and modified by us. Checksums, stripped text, and default object blobs are compared value by value against what Anki computes, and the schema 11 conversions round-trip dicts produced by Anki's API.
 
-`tests/test_sync.py` covers sync end to end without touching the real AnkiWeb. The `anki` wheel includes AnkiWeb's protocol front end, so a fixture starts `python -m anki.syncserver` in a subprocess on a random port. Our client uploads, Anki logs in as a second client and verifies every note, tag, and deck, then edits and deletes and syncs the deltas back, and the same happens in reverse. `pytest-timeout` bounds the whole run.
+`tests/test_sync.py` covers sync end to end without touching the real AnkiWeb. The `anki` wheel includes AnkiWeb's protocol front end (media endpoints included), so `start_sync_server` in `syncer.py` launches `python -m anki.syncserver` on a free port; the pytest fixture and the notebooks' story cells both use it. Our client uploads, Anki logs in as a second client and verifies every note, tag, and deck, then edits and deletes and syncs the deltas back, and the same happens in reverse. Media gets the same treatment: bytes round-trip through Anki's media sync in both directions, deletions and same-name conflicts propagate, batching is exercised past the 25-file zip limit, and a count-check failure recovers. `pytest-timeout` bounds the whole run.
 
 Run `pytest` for the sync test and `nbdev-test` for the notebooks. Cells that need a server process or AnkiWeb credentials are marked `eval: false` so CI and doc builds skip them, and no committed cell contains real credentials.
 
@@ -50,10 +53,13 @@ Hard-won facts worth keeping. When a protocol question comes up the answer is in
 - `config.curModel` is a per-collection notetype id (a timestamp), so exclude it when comparing the `config` table against the oracle.
 - The AnkiWeb sync client lives in `syncer.py` (module `fastanki.syncer`), named so it doesn't collide with core's top-level `sync` function; `from fastanki import *` exposes both, and `SyncServer`/`sync_collection`/etc. come from `fastanki.syncer`.
 - `apsw` (not stdlib `sqlite3`): connections have no `.commit()`/`.rollback()` (autocommit unless inside an explicit transaction), `execute` runs multiple statements so there is no `executescript`, and double-quoted strings are disabled, so SQL string literals must use single quotes. Mutations go through `Collection._tx()`; sync uses explicit `BEGIN IMMEDIATE`/`COMMIT`/`ROLLBACK`. The busy timeout is set before the WAL pragma, else concurrent opens hit `BusyError` on the journal-mode switch.
+- Media sync wire quirks (`sync/media/protocol.rs`): JSON replies are wrapped in a legacy `{"data": ..., "err": ""}` envelope, and `serde_tuple` structs travel as JSON *arrays*: a change row is `[fname, usn, sha1]`, an upload reply `[processed, current_usn]`. The upload zip's `_meta` is a list of `[name, zipname|null]` pairs (null = deletion), but a download zip's is a `{zipname: name}` dict.
+- Media db mtimes mix units: the folder mtime cache (`dirMod`) is milliseconds, per-file mtimes are seconds. Deletions are detected only by the folder scan, and the scan is skipped entirely when the folder mtime is unchanged - so tests that fake db state must not touch the folder, or the scan will "repair" the fake.
+- After a media upload, adopt the server's usn only if `lastUsn + files_sent == current_usn`; anything else means another client uploaded concurrently and the next fetch must see their rows (`syncer.rs`).
+- Anki's add-media-uniquely lowercases: a fresh uppercase filename is stored lowercased, but the same-name-same-content check runs against the original case first, so on a case-insensitive filesystem re-adding `Foo.jpg` returns `Foo.jpg` while Linux returns `foo.jpg`. Don't pin the mixed-case result in a test.
+- A failed `mediaSanity` count check (deleted entries excluded) clears the whole media db so the next sync re-lists against the server; media has no full-sync path, so this is its only recovery mechanism.
 
 ## Not implemented
-
-Media sync is a separate protocol and is skipped entirely. That is safe, because collection sync moves note rows and media sync moves files, and the two don't interfere. The one rule is to never create notes that reference media files we can't upload, so the API has no way to attach media.
 
 Filtered decks aren't supported. The schema 11 conversions assert if they meet one, so syncing such a collection fails rather than corrupting it.
 

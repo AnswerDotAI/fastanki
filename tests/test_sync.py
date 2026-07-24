@@ -1,8 +1,9 @@
-import os, sys, time, socket, subprocess, tempfile, shutil, threading
+import os, sys, time, subprocess, tempfile, shutil, threading
 import pytest, httpx
 from pathlib import Path
 from fastanki.collection import Collection
-from fastanki.syncer import SyncServer, SanityCheckFailed
+from fastanki.syncer import SyncServer, SanityCheckFailed, start_sync_server
+from fastanki.media import MediaSanityFailed
 
 from anki.collection import Collection as AnkiCollection
 
@@ -10,23 +11,9 @@ pytestmark = pytest.mark.timeout(120)
 
 @pytest.fixture
 def server():
-    with socket.socket() as s:
-        s.bind(('127.0.0.1', 0))
-        port = s.getsockname()[1]
     base = tempfile.mkdtemp()
-    env = os.environ | dict(SYNC_BASE=base, SYNC_USER1='tester:s3kret', SYNC_HOST='127.0.0.1', SYNC_PORT=str(port))
-    proc = subprocess.Popen([sys.executable, '-m', 'anki.syncserver'], env=env,
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    ep = f'http://127.0.0.1:{port}/'
-    try:
-        for _ in range(100):
-            if proc.poll() is not None: raise RuntimeError('sync server died at startup')
-            try:
-                httpx.get(ep, timeout=1)
-                break
-            except httpx.TransportError: time.sleep(0.1)
-        else: raise RuntimeError('sync server never came up')
-        yield ep
+    proc, ep = start_sync_server(base)
+    try: yield ep
     finally:
         proc.terminate()
         try: proc.wait(timeout=10)
@@ -218,13 +205,106 @@ def test_grave_chunking(server, tmp_path):
     assert b.q1('select count(*) from notes') == 0
     a.close(); b.close()
 
+# ---- media sync ----
+
+def _wait_media(oc):
+    "The oracle's media sync runs in a backend thread; media_sync_status also rethrows its errors"
+    while oc.media_sync_status().active: time.sleep(0.05)
+
+def test_media_round_trip(server, tmp_path):
+    ep = server
+    col = Collection.open(tmp_path/'ours'/'collection.anki2')
+    img = col.add_media(b'PNG our image', 'pic.png')
+    assert img == 'pic.png'
+    col.add(Front=f'What is this? <img src="{img}">', Back='our pic')
+    col.sync(user='tester', passw='s3kret', endpoint=ep, upload=True)
+    col.sync_media()
+    col.sync_media()                                                  # caught up: a no-op
+
+    # anki as second client: pull collection and media, verify bytes and reference integrity
+    (tmp_path/'second').mkdir()
+    oc = AnkiCollection(str(tmp_path/'second'/'collection.anki2'))
+    auth = oc.sync_login('tester', 's3kret', endpoint=ep)
+    st = oc.sync_collection(auth, sync_media=False)
+    oc.close_for_full_sync()
+    oc.full_upload_or_download(auth=auth, server_usn=st.server_media_usn, upload=False)
+    oc.reopen(after_full_sync=True)
+    oc.sync_media(auth); _wait_media(oc)
+    med = Path(oc.media.dir())
+    assert (med/'pic.png').read_bytes() == b'PNG our image'
+    chk = oc.media.check()                                            # oracle: nothing missing, nothing unused
+    assert not chk.missing and not chk.unused
+
+    # oracle adds a file and deletes ours; we pull both (their file arrives, our deletion lands in media.trash)
+    (tmp_path/'oracle.mp3').write_bytes(b'ORACLE AUDIO')
+    oname = oc.media.add_file(str(tmp_path/'oracle.mp3'))
+    oc.media.trash_files(['pic.png'])
+    oc.sync_media(auth); _wait_media(oc)
+    col.sync_media()
+    with col.media() as m:
+        assert (m.folder/oname).read_bytes() == b'ORACLE AUDIO'
+        assert not (m.folder/'pic.png').exists()
+        assert (m.folder.with_name('media.trash')/'pic.png').exists()
+        assert m.pending(25) == [] and m.count() == 1
+
+    # same name added on both sides with different bytes: the server's copy wins locally
+    oc.media.write_data('clash.jpg', b'oracle version')
+    oc.sync_media(auth); _wait_media(oc)
+    col.add_media(b'our version', 'clash.jpg')
+    col.sync_media()
+    with col.media() as m:
+        assert (m.folder/'clash.jpg').read_bytes() == b'oracle version'
+        assert m.pending(25) == []
+
+    # our deletion propagates to the oracle
+    with col.media() as m: (m.folder/oname).unlink()
+    col.sync_media()
+    oc.sync_media(auth); _wait_media(oc)
+    assert not (med/oname).exists()
+    oc.close(); col.close()
+
+def test_media_batching(server, tmp_path):
+    "30 files exercise the 25-per-zip batch loops in both directions"
+    ep = server
+    a = Collection.open(tmp_path/'a'/'collection.anki2')
+    for i in range(30): a.add_media(f'file {i}'.encode(), f'f{i:02}.txt')
+    _up(a, ep)
+    a.sync_media()
+    b = Collection.open(tmp_path/'b'/'collection.anki2')
+    b.sync(user='tester', passw='s3kret', endpoint=ep)
+    b.sync_media()
+    with b.media() as m:
+        assert m.count() == 30 and m.meta()[1] == 30
+        assert (m.folder/'f07.txt').read_bytes() == b'file 7'
+        assert m.pending(25) == []
+    a.close(); b.close()
+
+def test_media_sanity_failure(server, tmp_path):
+    "A failed count check clears the local media db; the next sync re-lists against the server"
+    ep = server
+    a = Collection.open(tmp_path/'a'/'collection.anki2')
+    a.add_media(b'real', 'real.png')
+    _up(a, ep)
+    a.sync_media()
+    # corrupt the db without touching the folder: a folder change would re-scan and clean the ghost up
+    with a.media() as m:
+        m.set_entry('ghost.png', '0'*40, 1, False)                    # inflates the local count
+        m.set_entry('gone.txt', None, 0, True)                        # a pending deletion, so the sync acts and reaches the count check
+    with pytest.raises(MediaSanityFailed): a.sync_media()
+    with a.media() as m: assert m.count() == 0 and m.meta() == (0, 0) # forced resync
+    a.sync_media()
+    with a.media() as m:
+        assert m.count() == 1 and m.pending(25) == []
+        assert (m.folder/'real.png').read_bytes() == b'real'
+    a.close()
+
 def test_tool_schemas():
     "Every LLM tool produces a valid toolslm schema with described params"
     import fastanki
     from toolslm.funccall import get_schema
     tools = [fastanki.add_card, fastanki.add_fb_card, fastanki.add_cloze_card, fastanki.find_notes,
              fastanki.find_note_ids, fastanki.find_cards, fastanki.find_card_ids, fastanki.get_note,
-             fastanki.del_note, fastanki.update_fb_note, fastanki.sync]
+             fastanki.del_note, fastanki.add_media, fastanki.update_fb_note, fastanki.sync]
     for f in tools:
         props = get_schema(f)['input_schema']['properties']   # raises if a param can't be schema'd
         assert props and all(v.get('description') for v in props.values()), f.__name__

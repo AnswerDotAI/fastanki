@@ -7,7 +7,7 @@ Docs: https://AnswerDotAI.github.io/fastanki/syncer.html.md"""
 # %% auto #0
 __all__ = ['SYNC_VER', 'CLIENT_VER', 'GRAVE_CARD', 'GRAVE_NOTE', 'GRAVE_DECK', 'CHUNK_SIZE', 'SyncServer', 'nt_from_s11',
            'nt_to_s11', 'deck_from_s11', 'deck_to_s11', 'dconf_from_s11', 'dconf_to_s11', 'SyncRequired',
-           'FullSyncRequired', 'SanityCheckFailed']
+           'FullSyncRequired', 'SanityCheckFailed', 'start_sync_server']
 
 # %% ../nbs/02_syncer.ipynb #33838603
 import zstandard, httpx, random, time, json
@@ -26,17 +26,17 @@ class SyncServer:
         self.endpoint = endpoint or 'https://sync.ankiweb.net/'
         self.hkey,self.skey = hkey,f'{random.getrandbits(32):08x}'
         self.client = httpx.Client(timeout=60)
-    def __call__(self, method, obj=None, data=None):
-        "POST `obj` (or raw `data`) to sync/`method`, returning the decompressed response body"
+    def __call__(self, method, obj=None, data=None, prefix='sync'):
+        "POST `obj` (or raw `data`) to `prefix`/`method`, returning the decompressed response body"
         body = zstandard.compress(data if data is not None else json.dumps(obj or {}).encode())
         hdr = json.dumps(dict(v=SYNC_VER, k=self.hkey, c=CLIENT_VER, s=self.skey))
-        r = self.client.post(f'{self.endpoint}sync/{method}', content=body, headers={'anki-sync': hdr, 'content-type': 'application/octet-stream'})
+        r = self.client.post(f'{self.endpoint}{prefix}/{method}', content=body, headers={'anki-sync': hdr, 'content-type': 'application/octet-stream'})
         if r.status_code==308:
             self.endpoint = r.headers['location'].rstrip('/') + '/'
-            return self(method, obj, data)
+            return self(method, obj, data, prefix)
         r.raise_for_status()
         return zstandard.ZstdDecompressor().decompressobj().decompress(r.content) if 'anki-original-size' in r.headers else r.content
-    def json(self, method, obj=None): return json.loads(self(method, obj))
+    def json(self, method, obj=None, prefix='sync'): return json.loads(self(method, obj, prefix=prefix))
     def login(self, user, passw):
         "Exchange credentials for a host key, stored on this server object"
         self.hkey = self.json('hostKey', dict(u=user, p=passw))['key']
@@ -508,3 +508,27 @@ def sync(self:Collection, user=None, passw=None, endpoint=None, upload=False):
         res = 'full sync'
     self.save_auth(srv)
     return res
+
+# %% ../nbs/02_syncer.ipynb #2bb9df91
+def start_sync_server(
+    base, # Folder for the server's data
+    user:str='tester', # Username the server will accept
+    passw:str='s3kret', # Password for `user`
+):
+    "Start the anki wheel's sync server on a free port, returning (process, endpoint); it stops at exit, or sooner via `.terminate()`"
+    import subprocess, socket, atexit
+    with socket.socket() as s:
+        s.bind(('127.0.0.1', 0))
+        port = s.getsockname()[1]
+    env = dict(SYNC_BASE=str(base), SYNC_USER1=f'{user}:{passw}', SYNC_HOST='127.0.0.1', SYNC_PORT=str(port))
+    proc = subprocess.Popen([sys.executable, '-m', 'anki.syncserver'], env=os.environ|env,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    atexit.register(proc.terminate)
+    ep = f'http://127.0.0.1:{port}/'
+    for _ in range(100):
+        if proc.poll() is not None: raise RuntimeError('sync server died at startup')
+        try:
+            httpx.get(ep, timeout=1)
+            return proc, ep
+        except httpx.TransportError: time.sleep(0.1)
+    raise RuntimeError('sync server never came up')

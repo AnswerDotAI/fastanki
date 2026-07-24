@@ -2,7 +2,7 @@
 
 fastanki reads and writes Anki's collection format and speaks the AnkiWeb sync protocol
 directly in Python. Cards live in a local sqlite file and reach desktop/phone via AnkiWeb
-sync. Media files aren't synced yet — create text-only cards.
+sync, and so do media files added with `add_media`.
 
 Importing this module also calls `allow({'fastanki.*': ...})`, so effect-gating sandboxes
 built on the pyskills registry (such as safepyrun) trust fastanki's own operations.
@@ -14,7 +14,8 @@ built on the pyskills registry (such as safepyrun) trust fastanki's own operatio
 - `get_note(id)` — retrieve a single note by ID
 - `update_fb_note(id, Front='...')` — modify fields; `add_tags='tag'` adds tags without replacing
 - `del_card(notes=id)` — delete by note ID
-- `sync()` — push/pull to AnkiWeb (pass `user=`/`passw=` the first time; credentials are cached)
+- `add_media(path)` — copy an image/sound into the collection; cite the returned name in a field as `<img src="name">` or `[sound:name]`
+- `sync()` — push/pull to AnkiWeb, media included (pass `user=`/`passw=` the first time; credentials are cached)
 
 ## Flashcard principles for mathematics
 
@@ -90,6 +91,6 @@ The student corrected a proposal to combine two rules into one card:
 from fastanki.core import *
 from pyskills import allow
 
-__all__ = ['add_fb_card', 'find_notes', 'find_note_ids', 'find_cards', 'find_card_ids', 'get_note', 'del_card', 'update_fb_note', 'sync']
+__all__ = ['add_fb_card', 'add_media', 'find_notes', 'find_note_ids', 'find_cards', 'find_card_ids', 'get_note', 'del_card', 'update_fb_note', 'sync']
 
 allow({'fastanki.*': ...})
