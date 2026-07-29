@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.0.5
+
+### Bugs Squashed
+
+- Fix `del_card` -> `del_note` in skill exports and refresh README outputs ([#13](https://github.com/AnswerDotAI/fastanki/pull/13)), thanks to [@kafkasl](https://github.com/kafkasl)
+
+
 ## 0.0.4
 
 ### New Features
