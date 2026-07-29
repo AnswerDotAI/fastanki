@@ -1,4 +1,10 @@
-__version__ = "0.0.5"
+"""Python tools for Anki
+
+Modules:
+
+- `fastanki.skill`: Anki flashcard tools for LLM-driven spaced repetition. Direct sqlite + AnkiWeb sync, no Anki app needed."""
+
+__version__ = "0.0.6"
 from .collection import *
 from .syncer import *
 from .media import *
