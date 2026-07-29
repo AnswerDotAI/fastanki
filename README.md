@@ -44,19 +44,23 @@ cards = find_cards(deck='Default')
 cards
 ```
 
-    [Card(1764738198390, nid=1764738198390, due=49, ivl=0, queue=0)]
+    [Card(1784759309631, nid=1784759309631, due=1, ivl=0, queue=0)]
 
 ``` python
 cards[0]
 ```
 
-Card 1764738198390 (nid: 1764738198390, due: 49, ivl: 0d, queue: 0)
+<div class="prose" markdown="1">
+
+Card 1784759309631 (nid: 1784759309631, due: 1, ivl: 0d, queue: 0)
+
+</div>
 
 ``` python
 find_card_ids(deck='Default')
 ```
 
-    [1764738198390]
+    [1784759309631]
 
 [`find_notes`](https://AnswerDotAI.github.io/fastanki/core.html#find_notes) takes the same criteria and returns one [`Note`](https://AnswerDotAI.github.io/fastanki/collection.html#note) per matching note, where [`find_cards`](https://AnswerDotAI.github.io/fastanki/core.html#find_cards) may return several cards for a note (a Cloze note generates one card per cloze number, for instance).
 
@@ -65,20 +69,24 @@ notes = find_notes(fields={'Back':'hello'})
 notes
 ```
 
-    [Note(1764738198390, Front='你好', Back='hello', tags=[])]
+    [Note(1784759309631, Front='你好', Back='hello', tags=[])]
 
 ``` python
 note = notes[0]
 note
 ```
 
-**Front**: 你好 \| **Back**: hello
+<div class="prose" markdown="1">
+
+**Front**: 你好 \| **Back**: hello \| 🏷 -
+
+</div>
 
 ``` python
 find_note_ids(fields={'Back':'hello'})
 ```
 
-    [1764738198390]
+    [1784759309631]
 
 [`update_note`](https://AnswerDotAI.github.io/fastanki/core.html#update_note) modifies an existing note’s fields and/or tags. Pass either a [`Note`](https://AnswerDotAI.github.io/fastanki/collection.html#note) object or a note ID, along with any fields you want to change as keyword arguments. For tags:
 - `tags=['a','b']` — replaces all tags
@@ -88,25 +96,37 @@ find_note_ids(fields={'Back':'hello'})
 update_note(note, Back="updated answer", tags='testtag')
 ```
 
-**Front**: 你好 \| **Back**: updated answer \| 🏷️ testtag
+<div class="prose" markdown="1">
+
+**Front**: 你好 \| **Back**: updated answer \| 🏷 testtag
+
+</div>
 
 ``` python
 update_note(note, add_tags='moretagz')
 ```
 
-**Front**: 你好 \| **Back**: updated answer \| 🏷️ testtag, moretagz
+<div class="prose" markdown="1">
+
+**Front**: 你好 \| **Back**: updated answer \| 🏷 testtag moretagz
+
+</div>
 
 ``` python
 get_note(note.id)
 ```
 
-**Front**: 你好 \| **Back**: updated answer \| 🏷️ moretagz, testtag
+<div class="prose" markdown="1">
+
+**Front**: 你好 \| **Back**: updated answer \| 🏷 testtag moretagz
+
+</div>
 
 ``` python
 del_note([notezh, note])
 ```
 
-✓ 1 change(s)
+    2
 
 [`sync`](https://AnswerDotAI.github.io/fastanki/core.html#sync) connects to AnkiWeb: pass your credentials the first time, and they’re saved (as a host key, not your password) for later calls. The first sync of a fresh collection is a full download of your existing AnkiWeb collection; after that, syncs exchange deltas in both directions. fastanki will never replace a non-empty server collection without an explicit `upload=True`. Each [`sync`](https://AnswerDotAI.github.io/fastanki/core.html#sync) also syncs media: to put an image or sound on a card, [`add_media`](https://AnswerDotAI.github.io/fastanki/core.html#add_media) the file and cite the returned name in a field with `<img src="name">` or `[sound:name]`.
 
@@ -123,7 +143,7 @@ sync()  # after that
 anki_tools()
 ```
 
-    &`[add_fb_card, find_notes, find_note_ids, find_cards, find_card_ids, get_note, del_card, update_fb_note, sync]`
+    &`[add_card, add_fb_card, add_cloze_card, add_media, find_notes, find_note_ids, find_cards, find_card_ids, get_note, del_note, update_fb_note, sync]`
 
 Here are the available tools:
 &`[add_card, add_fb_card, add_cloze_card, find_notes, find_note_ids, find_cards, find_card_ids, get_note, del_note, update_fb_note, sync]`.
@@ -157,22 +177,36 @@ col = Collection.open()
 col.path.name
 ```
 
+    'collection.anki2'
+
 ``` python
 col.notetypes(), col.decks()
 ```
+
+    (['Basic', 'Cloze'], ['Default'])
 
 ``` python
 n = col.add(Front='adiós', Back='goodbye', deck='Spanish::Vocab', tags=['spanish'])
 n
 ```
 
+<div class="prose" markdown="1">
+
+**Front**: adiós \| **Back**: goodbye \| 🏷 spanish
+
+</div>
+
 ``` python
 col.due_counts('Spanish')
 ```
 
+    (1, 0, 0)
+
 ``` python
 col.find_notes(deck='Spanish')
 ```
+
+    [Note(1784759309645, Front='adiós', Back='goodbye', tags=['spanish'])]
 
 ``` python
 col.remove_deck('Spanish')

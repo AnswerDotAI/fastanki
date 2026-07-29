@@ -13,7 +13,7 @@ built on the pyskills registry (such as safepyrun) trust fastanki's own operatio
 - `find_cards(deck='Math')` / `find_notes(deck='Math')` — search by deck, tag, field substring, or due status
 - `get_note(id)` — retrieve a single note by ID
 - `update_fb_note(id, Front='...')` — modify fields; `add_tags='tag'` adds tags without replacing
-- `del_card(notes=id)` — delete by note ID
+- `del_note(notes=id)` — delete by note ID
 - `add_media(path)` — copy an image/sound into the collection; cite the returned name in a field as `<img src="name">` or `[sound:name]`
 - `sync()` — push/pull to AnkiWeb, media included (pass `user=`/`passw=` the first time; credentials are cached)
 
@@ -91,6 +91,6 @@ The student corrected a proposal to combine two rules into one card:
 from fastanki.core import *
 from pyskills import allow
 
-__all__ = ['add_fb_card', 'add_media', 'find_notes', 'find_note_ids', 'find_cards', 'find_card_ids', 'get_note', 'del_card', 'update_fb_note', 'sync']
+__all__ = ['add_fb_card', 'add_media', 'find_notes', 'find_note_ids', 'find_cards', 'find_card_ids', 'get_note', 'del_note', 'update_fb_note', 'sync']
 
 allow({'fastanki.*': ...})
