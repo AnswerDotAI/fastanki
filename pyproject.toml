@@ -15,7 +15,7 @@ classifiers = ["Natural Language :: English", "Intended Audience :: Developers",
 dependencies = ['fastcore', 'httpx', 'zstandard', 'protobuf>=6.31', 'apsw']
 
 [project.optional-dependencies]
-dev = ['anki', 'pytest', 'pytest-timeout', 'toolslm']
+dev = ['anki', 'pytest', 'pytest-timeout', 'fastcore>=2.1.18']
 
 
 [project.urls]
@@ -33,6 +33,9 @@ version = {attr = "fastanki.__version__"}
 
 [tool.setuptools.packages.find]
 include = ["fastanki*"]
+
+[tool.setuptools.package-data]
+"fastanki._proto" = ["*.binpb"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

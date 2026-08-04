@@ -301,7 +301,7 @@ def test_media_sanity_failure(server, tmp_path):
 def test_tool_schemas():
     "Every LLM tool produces a valid toolslm schema with described params"
     import fastanki
-    from toolslm.funccall import get_schema
+    from fastcore.funccall import get_schema
     tools = [fastanki.add_card, fastanki.add_fb_card, fastanki.add_cloze_card, fastanki.find_notes,
              fastanki.find_note_ids, fastanki.find_cards, fastanki.find_card_ids, fastanki.get_note,
              fastanki.del_note, fastanki.add_media, fastanki.update_fb_note, fastanki.sync]

@@ -12,7 +12,7 @@ This is an nbdev project. The notebooks in `nbs/` are the source of truth, and `
 - `03_core.ipynb` (`core.py`): the functional API (`add_card`, `find_notes`, `sync`, etc). Each function opens the default collection, does its work, and closes. `anki_tools` exposes these as LLM tools.
 - `04_media.ipynb` (`media.py`): media files and the media sync protocol. Filename normalization, the media db and folder scan, the zip wire format, and the media sync state machine.
 
-`fastanki/_proto/` is not generated from a notebook. It contains protobuf modules copied from the `anki` wheel with imports rewritten, and can be refreshed the same way from a newer wheel if needed. `tests/test_sync.py` is the end to end sync test, described below. `anki/` (gitignored) is a clone of the Anki source, kept for reference. When a protocol question comes up, the answer is in `anki/rslib/src/sync/`.
+`fastanki/_proto/` is not generated from a notebook. It vendors Anki's protobuf messages as serialized descriptors (`descriptors.binpb`), loaded at import into a private descriptor pool and exposed as module-shaped namespaces (`notetypes_pb2` etc), so the `anki` wheel's own registrations in the default pool never clash whatever version is installed. When an Anki update changes a proto we use, run `from fastanki._proto import refresh; refresh()` to re-dump the blob from the installed wheel. `tests/test_sync.py` is the end to end sync test, described below. `anki/` (gitignored) is a clone of the Anki source, kept for reference. When a protocol question comes up, the answer is in `anki/rslib/src/sync/`.
 
 ## Design
 
