@@ -2,6 +2,13 @@
 
 <!-- do not remove -->
 
+## 0.0.6
+
+### New Features
+
+- Vendor Anki protos as serialized descriptors in a private pool to avoid clashing with the installed anki wheel ([#14](https://github.com/AnswerDotAI/fastanki/issues/14))
+
+
 ## 0.0.5
 
 ### Bugs Squashed
