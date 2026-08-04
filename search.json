@@ -1,0 +1,442 @@
+[
+  {
+    "objectID": "syncer.html",
+    "href": "syncer.html",
+    "title": "Syncing",
+    "section": "",
+    "text": "AnkiWeb’s protocol is simpler than its lack of documentation suggests: JSON over POST, zstd-compressed, with auth in a header. A sync session walks a fixed sequence of endpoints under {endpoint}sync/: meta to compare collection state, then for a normal (delta) sync start, applyGraves, applyChanges, chunk (repeated), applyChunk (repeated), sanityCheck2 and finish. When the two sides have diverged too far, a full sync replaces one side’s whole sqlite file via upload or download. Everything here was built against Anki’s Rust implementation as the reference, and is tested below against a real Anki sync server, with Anki itself as the second client.\nimport tempfile\nfrom fastcore.test import *\nfrom google.protobuf.json_format import MessageToDict",
+    "crumbs": [
+      "Syncing"
+    ]
+  },
+  {
+    "objectID": "syncer.html#the-wire",
+    "href": "syncer.html#the-wire",
+    "title": "Syncing",
+    "section": "The wire",
+    "text": "The wire\nEvery request is a POST whose body is zstd-compressed JSON, with an anki-sync header carrying the protocol version (v, currently 11), the auth key (k, empty only for login), a client version string (c), and a random session id (s). Responses come back zstd-compressed too. A 308 means “use this other host from now on”: AnkiWeb spreads users across shards this way, so the new endpoint gets saved with the auth key.\n\nsource\n\nSyncServer\ndef SyncServer(\n    endpoint:NoneType=None, hkey:str=''\n):\nOne AnkiWeb-protocol server (AnkiWeb itself, or self-hosted)",
+    "crumbs": [
+      "Syncing"
+    ]
+  },
+  {
+    "objectID": "syncer.html#schema-11-conversions",
+    "href": "syncer.html#schema-11-conversions",
+    "title": "Syncing",
+    "section": "Schema 11 conversions",
+    "text": "Schema 11 conversions\nHere’s a wrinkle: although both sides store the modern schema, the delta protocol exchanges notetypes, decks and deck configs in the 2012 file format, JSON dicts nicknamed “schema 11”, for compatibility with older clients. So we need mappings between those dicts and our tables. Two rules matter for round-trip safety: unknown keys accumulate in an other JSON blob within the modern config so nothing is dropped, and a handful of fields changed units or sign along the way (autoplay becomes disable_autoplay, initial ease moves from thousands to a float, and so on).\n\nsource\n\nnt_to_s11\ndef nt_to_s11(\n    con, ntid\n):\nConvert notetype ntid’s rows to a schema-11 dict\n\nsource\n\n\nnt_from_s11\ndef nt_from_s11(\n    m\n):\nConvert a schema-11 notetype dict to (notetype_row, field_rows, template_rows)\n\nsource\n\n\ndeck_to_s11\ndef deck_to_s11(\n    con, did\n):\nConvert deck did’s row to a schema-11 dict\n\nsource\n\n\ndeck_from_s11\ndef deck_from_s11(\n    d\n):\nConvert a schema-11 deck dict to a decks table row (filtered decks unsupported: kept as-is if present locally)\n\nsource\n\n\ndconf_to_s11\ndef dconf_to_s11(\n    con, dcid\n):\nConvert deck config dcid’s row to a schema-11 dict\n\nsource\n\n\ndconf_from_s11\ndef dconf_from_s11(\n    d\n):\nConvert a schema-11 deck config dict to a deck_config table row\nTo test the conversions, we get genuine schema-11 dicts from Anki itself (its Python API still hands out models and decks in exactly this format), push them through *_from_s11, read them back with *_to_s11, and check every value Anki sent is preserved:\n\nfrom anki.collection import Collection as AnkiCollection\nimport anki.lang\n\n\ndef sub_eq(a, b, path=''):\n    \"Assert every key/value in `a` appears in `b` (recursively, with numeric tolerance)\"\n    for k,v in a.items():\n        w = b.get(k)\n        if isinstance(v,dict): sub_eq(v, w or {}, f'{path}{k}.')\n        elif isinstance(v,float) or isinstance(w,float): assert abs(v-(w or 0))&lt;1e-6, f'{path}{k}: {v} vs {w}'\n        elif isinstance(v,bool) or isinstance(w,bool): assert bool(v)==bool(w), f'{path}{k}: {v} vs {w}'\n        else: assert v==w, f'{path}{k}: {v!r} vs {w!r}'\n\ntd = Path(tempfile.mkdtemp())\nac = AnkiCollection(str(td/'oracle.anki2'))\nmcon = connect(td/'scratch.anki2')\nmcon.execute(SCHEMA)\nm11 = ac.models.by_name('Cloze')\nrow,flds,tmpls = nt_from_s11(m11)\nmcon.execute('insert into notetypes values (?,?,?,?,?)', row)\nmcon.executemany('insert into fields values (?,?,?,?)', flds)\nmcon.executemany('insert into templates values (?,?,?,?,?,?)', tmpls)\nback = nt_to_s11(mcon, row[0])\nsub_eq(dict(m11), back)\n\n\nd11 = ac.decks.get(1)\nmcon.execute('insert into decks values (?,?,?,?,?,?)', deck_from_s11(d11))\nsub_eq({k:v for k,v in d11.items() if k!='mid'}, deck_to_s11(mcon, 1))\nc11 = ac.decks.get_config(1)\nmcon.execute('insert into deck_config values (?,?,?,?,?)', dconf_from_s11(c11))\nsub_eq(dict(c11), dconf_to_s11(mcon, 1))",
+    "crumbs": [
+      "Syncing"
+    ]
+  },
+  {
+    "objectID": "syncer.html#gathering-and-applying-changes",
+    "href": "syncer.html#gathering-and-applying-changes",
+    "title": "Syncing",
+    "section": "Gathering and applying changes",
+    "text": "Gathering and applying changes\nA delta sync moves four kinds of data. Graves (deletion tombstones) go first in both directions. Then “unchunked changes”: notetypes, decks, deck configs and tags, sent whole. Then notes, cards and review log entries stream in chunks of positional JSON arrays. Rows pending sync are marked usn=-1; as each side sends them it rewrites the mark to the server’s current usn, so both ends converge on the same sequence number at finish.",
+    "crumbs": [
+      "Syncing"
+    ]
+  },
+  {
+    "objectID": "syncer.html#the-sync-state-machine",
+    "href": "syncer.html#the-sync-state-machine",
+    "title": "Syncing",
+    "section": "The sync state machine",
+    "text": "The sync state machine\nsync_collection ties it together, following the same sequence as Anki’s client. meta decides between nothing-to-do, a delta sync, and a full sync; a delta walks graves, changes, chunks down, chunks up, sanity check, finish. The sanity check compares object counts on both ends; on a mismatch we bump our schema time so the next sync is a full one, which is exactly what Anki does.\n\nsource\n\nCollection.sync_collection\ndef sync_collection(\n    srv\n):\nDelta-sync with srv, returning ‘noChanges’, ‘success’, or raising FullSyncRequired\n\nsource\n\n\nCollection.sync_meta\ndef sync_meta():\nCall self as a function.\n\nsource\n\n\nSanityCheckFailed\ndef SanityCheckFailed(\n    *args, **kwargs\n):\nCommon base class for all non-exit exceptions.\n\nsource\n\n\nFullSyncRequired\ndef FullSyncRequired(\n    *args, **kwargs\n):\nCommon base class for all non-exit exceptions.\n\nsource\n\n\nSyncRequired\ndef SyncRequired(\n    *args, **kwargs\n):\nCommon base class for all non-exit exceptions.",
+    "crumbs": [
+      "Syncing"
+    ]
+  },
+  {
+    "objectID": "syncer.html#full-sync-and-login",
+    "href": "syncer.html#full-sync-and-login",
+    "title": "Syncing",
+    "section": "Full sync and login",
+    "text": "Full sync and login\nA full download returns the server’s whole sqlite file; upload sends ours (the server integrity-checks it before accepting, answering with the literal string OK). Auth is a host key from hostKey plus the endpoint any 308 redirect settled on, saved as JSON next to the collection.\n\nsource\n\nCollection.sync\ndef sync(\n    user:NoneType=None, passw:NoneType=None, endpoint:NoneType=None, upload:bool=False\n):\nSync with AnkiWeb (or endpoint): logs in if needed, handles delta and full syncs\n\nsource\n\n\nCollection.load_auth\ndef load_auth(\n    endpoint:NoneType=None\n):\nA SyncServer from saved auth, or None\n\nsource\n\n\nCollection.save_auth\ndef save_auth(\n    srv\n):\nCall self as a function.\n\nsource\n\n\nCollection.full_upload\ndef full_upload(\n    srv\n):\nReplace the server’s collection with ours\n\nsource\n\n\nCollection.full_download\ndef full_download(\n    srv\n):\nReplace the local collection with the server’s copy",
+    "crumbs": [
+      "Syncing"
+    ]
+  },
+  {
+    "objectID": "syncer.html#against-a-real-server",
+    "href": "syncer.html#against-a-real-server",
+    "title": "Syncing",
+    "section": "Against a real server",
+    "text": "Against a real server\nThe anki wheel ships the real sync server (the same code AnkiWeb’s protocol front end is built from). That makes the test story write itself: fastanki syncs up to a genuine Anki server on localhost, then Anki, acting as a second client, syncs down and checks what arrived; then the same in reverse. The cells below tell that story but are marked eval: false: they need a server process, so tests/test_sync.py runs this exact sequence under pytest, where a fixture launches the server in a subprocess with a temp data folder and kills it afterwards. Nothing here talks to the real AnkiWeb.\nBecause “start a real server” is something the tests, these story cells, and any interactive session all need, it’s a library function: pick a free port, launch python -m anki.syncserver from the installed wheel, wait for it to answer, and register an atexit stop so a forgotten terminate() can’t leave orphans. It needs the anki package, which is a dev dependency only.\n\nsource\n\nstart_sync_server\ndef start_sync_server(\n    base, # Folder for the server's data\n    user:str='tester', # Username the server will accept\n    passw:str='s3kret', # Password for `user`\n):\nStart the anki wheel’s sync server on a free port, returning (process, endpoint); it stops at exit, or sooner via .terminate()\n\nserver, EP = start_sync_server(td/'server')\n\nOur client logs in, adds some content, and full-uploads (a fresh server and a fresh client have different schema stamps, so the first sync is always a full one):\n\ncol = Collection.open(td/'ours'/'collection.anki2')\nn1 = col.add(Front='syncme', Back='please', tags='wire', deck='Sync::Deep')\nncz = col.add(model='Cloze', Text='{{c1::first}} {{c2::second}}')\ntest_fail(lambda: col.sync_collection(SyncServer(EP, hkey='bad')))\nres = col.sync(user='tester', passw='s3kret', endpoint=EP, upload=True)\ntest_eq(res, 'full sync')\n\n\ntest_eq(col.sync(), 'noChanges')\n\nNow Anki plays second client: log in with its own machinery, full-download, and inspect what we uploaded.\n\n(td/'second').mkdir()\noc2 = AnkiCollection(str(td/'second'/'collection.anki2'))\nauth = oc2.sync_login('tester', 's3kret', endpoint=EP)\nst = oc2.sync_collection(auth, sync_media=False)\noc2.close_for_full_sync()\noc2.full_upload_or_download(auth=auth, server_usn=st.server_media_usn, upload=False)\noc2.reopen(after_full_sync=True)\ntest_eq(sorted(oc2.find_notes('')), sorted([n1.id, ncz.id]))\ntest_eq(oc2.find_notes('tag:wire'), [n1.id])\ntest_eq(oc2.find_notes('deck:Sync::Deep'), [n1.id])\nonote = oc2.get_note(ncz.id)\ntest_eq(onote['Text'], '{{c1::first}} {{c2::second}}')\n\nThen it makes changes of its own: a new note, a new deck, an edit and a deletion, delta-synced up with Anki’s client code:\n\ntheirs = oc2.new_note(oc2.models.by_name('Basic'))\ntheirs['Front'] = 'from the other side'\noc2.add_note(theirs, oc2.decks.add_normal_deck_with_name('Oracle').id)\non = oc2.get_note(n1.id)\non['Back'] = 'edited remotely'\noc2.update_note(on)\noc2.remove_notes([ncz.id])\nst = oc2.sync_collection(auth, sync_media=False)\ntest_eq(st.required, st.NO_CHANGES)\n\nAnd a delta sync brings all three changes to us, passing the server’s count check on the way:\n\ntest_eq(col.sync(), 'success')\ntest_eq(col.find_note_ids(Front='from the other side'), [theirs.id])\ntest_eq(col.get_note(n1.id)['Back'], 'edited remotely')\ntest_fail(lambda: col.get_note(ncz.id))\ntest_eq([d for d in col.decks() if d=='Oracle'], ['Oracle'])\n\nFinally the reverse direction once more: our deletion and a new tagged note, verified by the oracle.\n\nn2 = col.add(Front='round trip', tags=['back','forth'])\ncol.remove_notes(n1.id)\ntest_eq(col.sync(), 'success')\nst = oc2.sync_collection(auth, sync_media=False)\noc2.close()\noc3 = AnkiCollection(str(td/'second'/'collection.anki2'))\ntest_eq(sorted(oc3.find_notes('')), sorted([theirs.id, n2.id]))\ntest_eq(oc3.find_notes('tag:forth'), [n2.id])\noc3.close()\ncol.close()\nserver.terminate()",
+    "crumbs": [
+      "Syncing"
+    ]
+  },
+  {
+    "objectID": "media.html",
+    "href": "media.html",
+    "title": "Media",
+    "section": "",
+    "text": "Media sync is a protocol of its own, independent of collection sync: collection sync moves note and card rows, media sync moves files, and neither orders the other. It has its own usn sequence and no full-sync path, so every media sync is incremental. Local state is a media folder next to the collection plus a small sqlite db with one row per file; the folder is the truth, and a scan before each sync brings the db up to date. Like the rest of fastanki this was built against Anki’s Rust code (rslib/src/sync/media/) as the reference, and is tested against a real Anki server below with Anki itself as the second client.\nimport tempfile\nfrom fastcore.test import *\nfrom anki.collection import Collection as AnkiCollection\nfrom anki.utils import checksum",
+    "crumbs": [
+      "Media"
+    ]
+  },
+  {
+    "objectID": "media.html#filenames",
+    "href": "media.html#filenames",
+    "title": "Media",
+    "section": "Filenames",
+    "text": "Filenames\nA media file’s name is its identity across devices, so Anki normalizes names aggressively before they may sync: NFC form (APFS stores and serves NFD), characters that break some platform stripped, Windows device names defused, no trailing dot or space, 120 bytes at most. A file whose name can’t survive this round trip is skipped by sync rather than mangled.\n\nsource\n\nnorm_fname\ndef norm_fname(\n    fname\n):\nNormalize a media filename as Anki does: NFC, problem characters stripped, device names defused, 120 bytes max\nThe awkward cases are pinned by Anki’s own test suite (files.rs); we also push names through the oracle’s write_data, which runs the genuine Rust normalization, and check we picked the same name:\n\ntest_eq(norm_fname('foo.jpg'), 'foo.jpg')\ntest_eq(norm_fname('con.jpg[]&gt;&lt;:\"/?*^\\\\|\\0\\r\\n'), 'con_.jpg')\ntest_eq(norm_fname('test.'), 'test._')\ntest_eq(norm_fname('test '), 'test _')\ntest_eq(norm_fname('x'*130+'.jpg'), 'x'*115+'.jpg')\n\ntd = Path(tempfile.mkdtemp())\nac = AnkiCollection(str(td/'oracle.anki2'))\nnames = ['ok.jpg', 'con.', 'foo bar.png', 'te\\u0301st.gif', 'x'*130+'.webp']   # NFD input comes back NFC\nfor name in names: test_eq(ac.media.write_data(name, b'data'), norm_fname(name))\n[(name, norm_fname(name)) for name in names[:4]]\n\n[('ok.jpg', 'ok.jpg'),\n ('con.', 'con_._'),\n ('foo bar.png', 'foo bar.png'),\n ('tést.gif', 'tést.gif')]",
+    "crumbs": [
+      "Media"
+    ]
+  },
+  {
+    "objectID": "media.html#adding-files",
+    "href": "media.html#adding-files",
+    "title": "Media",
+    "section": "Adding files",
+    "text": "Adding files\nAdding a file whose name is taken must never silently clobber different content, because after a sync every device would see the change. So an add is content-aware: same name and same bytes is a no-op, while same name and different bytes stores the data under name-{sha1}.ext instead. Case-insensitive filesystems make Foo.jpg and foo.jpg the same file, so when the name is uppercase and can’t be used as-is, Anki retries with the lowercased name before falling back to the hash rename - which means a fresh uppercase name is stored lowercased.\n\nsource\n\nadd_media_file\ndef add_media_file(\n    folder, data, fname\n):\nWrite data into folder under (normalized) fname without clobbering different content; returns the name used\nThe oracle shows every branch, and we behave identically (note the platform wrinkle in the middle: on a case-insensitive filesystem, an existing foo.jpg satisfies the same-content check for Foo.jpg, so the name comes back with its case preserved):\n\nmf = td/'add'\ncases = [('Foo.jpg', b'aaa'), ('Foo.jpg', b'aaa'), ('Foo.jpg', b'bbb'), ('dup.png', b'x'), ('dup.png', b'y')]\ntheirs = [ac.media.write_data(n, d) for n,d in cases]\nours = [add_media_file(mf, d, n) for n,d in cases]\ntest_eq(ours, theirs)                              # we make exactly the oracle's choices, branch by branch\ntest_eq(_sha1(b'aaa'), checksum(b'aaa'))           # and our checksums are Anki's: hex sha1\ntest_eq(theirs[0], 'foo.jpg')                      # fresh uppercase is stored lowercased\ntest_eq(theirs[2], f'foo-{_sha1(b\"bbb\")}.jpg')     # same name, different content: hash-renamed\ntest_eq(theirs[3:], ['dup.png', f'dup-{_sha1(b\"y\")}.png'])\nours\n\n['foo.jpg',\n 'Foo.jpg',\n 'foo-5cb138284d431abd6a053a56625ec088bfb88912.jpg',\n 'dup.png',\n 'dup-95cb0bfd2977c761298d9624e4b4d4c72a39974a.png']",
+    "crumbs": [
+      "Media"
+    ]
+  },
+  {
+    "objectID": "media.html#the-media-database",
+    "href": "media.html#the-media-database",
+    "title": "Media",
+    "section": "The media database",
+    "text": "The media database\nSync state lives in a sqlite db of two tiny tables: one row per file (csum NULL means “deleted, deletion not yet uploaded”; dirty means “changed since last sync”), and a meta row holding the media folder’s last-seen mtime plus the last server usn we’ve caught up to. The layout matches Anki’s own: for collection.anki2, the folder is collection.media and the db collection.mdb, the same names the desktop app would pick.\n\nsource\n\nMedia\ndef Media(\n    folder, db_path\n):\nA collection’s media folder plus the db tracking its sync state\n\nm = Media(td/'m'/'media', td/'m'/'collection.mdb')\ntest_eq(m.count(), 0)\ntest_is(m.entry('test.mp3'), None)\nm.set_entry('test.mp3', None, 0, False)\ntest_eq(m.entry('test.mp3'), (None, 0, 0))\nm.set_entry('test.mp3', _sha1(b'hello'), 123, True)\ntest_eq(m.pending(25), [('test.mp3', _sha1(b'hello'), 123)])\ntest_eq(m.count(), 1)\nm.set_meta(123, 321)\ntest_eq(m.meta(), (123, 321))\nm.force_resync()\ntest_eq((m.count(), m.meta()), (0, (0, 0)))",
+    "crumbs": [
+      "Media"
+    ]
+  },
+  {
+    "objectID": "media.html#change-tracking",
+    "href": "media.html#change-tracking",
+    "title": "Media",
+    "section": "Change tracking",
+    "text": "Change tracking\nThe media folder is the truth; the db just caches what sync needs to know about it. Before every sync, a scan reconciles the two: a file that’s new or has a changed mtime is re-hashed and marked dirty if its content really changed, and a db row whose file is gone becomes a deletion tombstone. Two mtime tricks keep this cheap: the folder’s own mtime (stored in dirMod, milliseconds) skips the whole scan when no directory entry changed, and per-file mtimes (seconds, matching Anki’s db format) decide what to re-hash. Some files can never sync, so the scan ignores them: names that aren’t valid NFC (macOS lists names in NFD; they’re treated as their NFC form when that form is valid), thumbs.db/.ds_store, empty files, and files over 100MiB.\nThe scenario below is Anki’s own change-tracking test: add, modify, delete, with a “touched but unchanged” case in the middle proving a bare mtime bump doesn’t cause a pointless upload. Since scans compare against the stored folder mtime, the test backdates mtimes rather than sleeping through the clock’s resolution:\n\ndef _backdate(p):\n    t = p.stat().st_mtime - 3\n    os.utime(p, (t, t))\n\ntrk = Media(td/'trk'/'media', td/'trk'/'collection.mdb')\nf1 = trk.folder/'file.jpg'\nf1.write_bytes(b'hello')\ntrk._register_changes()\ntest_eq(trk.count(), 1)\ntest_eq(trk.entry('file.jpg'), (_sha1(b'hello'), _mtime_s(f1), 1))\n\ntrk.set_entry('file.jpg', _sha1(b'hello'), _mtime_s(f1), False)     # as if it synced\nos.utime(f1); _backdate(trk.folder)\ntrk._register_changes()\ntest_eq(trk.entry('file.jpg')[2], 0)                                # touched, content unchanged: still clean\n\nf1.write_bytes(b'hello1'); _backdate(f1); _backdate(trk.folder)\ntrk._register_changes()\ntest_eq(trk.entry('file.jpg'), (_sha1(b'hello1'), _mtime_s(f1), 1))\n\ntrk.set_entry('file.jpg', _sha1(b'hello1'), _mtime_s(f1), False)\n(trk.folder/'Thumbs.db').write_bytes(b'x')                          # never syncs\n(trk.folder/'empty.gif').touch()                                    # nor do empty files\nf1.unlink(); _backdate(trk.folder)\ntrk._register_changes()\ntest_eq(trk.count(), 0)\ntest_eq(trk.entry('file.jpg'), (None, 0, 1))                        # a deletion tombstone, awaiting upload\ntrk.pending(25)\n\n[('file.jpg', None, 0)]",
+    "crumbs": [
+      "Media"
+    ]
+  },
+  {
+    "objectID": "media.html#zips-on-the-wire",
+    "href": "media.html#zips-on-the-wire",
+    "title": "Media",
+    "section": "Zips on the wire",
+    "text": "Zips on the wire\nFiles travel in zip batches, stored uncompressed. Each zip holds at most 25 files and stops accepting more once ~2.5MB has accumulated. Members are named 0, 1, … with a _meta JSON member mapping them to real filenames - but the two directions differ: an upload’s _meta is a list of [filename, zip_name] pairs where a null zip name means “this file was deleted”, while a download’s is a plain {zip_name: filename} dict (deletions never travel downward as zip entries; the change list already said what to delete).\n\nup = _zip_up([('a.jpg', b'aaa'), ('gone.mp3', None), ('b.png', b'bb')])\nwith zipfile.ZipFile(io.BytesIO(up)) as z:\n    test_eq(json.loads(z.read('_meta')), [['a.jpg', '0'], ['gone.mp3', None], ['b.png', '2']])\n    test_eq(z.read('0'), b'aaa')\n\ndown = io.BytesIO()\nwith zipfile.ZipFile(down, 'w', zipfile.ZIP_STORED) as z:      # what a server download looks like\n    z.writestr('0', b'data0'); z.writestr('_meta', json.dumps({'0':'pic.jpg'}))\ngot = _unzip_down(down.getvalue())\ntest_eq(got, [('pic.jpg', b'data0')])\ngot\n\n[('pic.jpg', b'data0')]\n\n\n_gather_zip reads the pending entries’ current bytes, honoring the size cutoff, uploading a since-vanished file as a deletion, and pruning entries that can never upload (the batch is then rebuilt from the db):\n\ngz = Media(td/'gz'/'media', td/'gz'/'collection.mdb')\nfor i in range(3): (gz.folder/f'big{i}.bin').write_bytes(bytes(1500_000))\n(gz.folder/'small.txt').write_bytes(b'hi')\ngz._register_changes()\n\ngot = gz._gather_zip([(f'big{i}.bin', _sha1(bytes(1500_000)), 0) for i in range(3)])\ntest_eq([f for f,_ in got], ['big0.bin', 'big1.bin'])               # 2.5MB cutoff: third file waits for the next batch\n\ngot = gz._gather_zip([('small.txt', _sha1(b'hi'), 0), ('vanished.png', 'deadbeef', 0), ('del.png', None, 0)])\ntest_eq(got, [('small.txt', b'hi'), ('vanished.png', None), ('del.png', None)])   # missing file -&gt; uploaded as deletion\n\ngz.set_entry('empty.bin', _sha1(b''), 1, True)                      # a zero-byte file can never upload\n(gz.folder/'empty.bin').touch()\ntest_is(gz._gather_zip([('empty.bin', _sha1(b''), 1)]), None)       # pruned; batch must be rebuilt...\ntest_eq([f for f,_,_ in gz.pending(25)], ['big0.bin', 'big1.bin', 'big2.bin', 'small.txt'])   # ...without it",
+    "crumbs": [
+      "Media"
+    ]
+  },
+  {
+    "objectID": "media.html#talking-to-the-server",
+    "href": "media.html#talking-to-the-server",
+    "title": "Media",
+    "section": "Talking to the server",
+    "text": "Talking to the server\nMedia endpoints live under msync/ beside the collection sync’s sync/, and use the very same envelope (zstd body, anki-sync header), so SyncServer handles them via its prefix argument. Two quirks are media-specific: JSON replies arrive wrapped in a legacy {\"data\": ..., \"err\": \"\"} envelope, and some payloads are JSON arrays rather than objects (Rust’s serde_tuple): each change-list row is [fname, usn, sha1], and an upload reply is [processed, current_usn]. The five methods are begin (returns the server’s current media usn), mediaChanges, downloadFiles, uploadChanges, and mediaSanity.\n\nsource\n\nMediaSanityFailed\ndef MediaSanityFailed(\n    *args, **kwargs\n):\nCommon base class for all non-exit exceptions.",
+    "crumbs": [
+      "Media"
+    ]
+  },
+  {
+    "objectID": "media.html#deciding-what-to-do-with-a-server-change",
+    "href": "media.html#deciding-what-to-do-with-a-server-change",
+    "title": "Media",
+    "section": "Deciding what to do with a server change",
+    "text": "Deciding what to do with a server change\nEach change-list row names a file and the sha1 it now has on the server (empty means deleted there). Against our db entry - its checksum, and whether it’s pending upload - there are exactly nine cases, and Anki’s changes.rs resolves them with three rules: a genuine content conflict favors the server (the loser’s bytes are already gone from the server’s history either way); a local pending addition survives a remote deletion (it’ll upload next); and matching sides just tidy the dirty flag. We keep the decision as a pure function of (local sha1, remote sha1, state), with Anki’s own test table pinning all nine cases below.\n\nsource\n\nrequired_change\ndef required_change(\n    local, remote, state\n):\nResolve one server row: sha1s (’’ means deleted), state in none/clean/dirty -&gt; None, ‘download’, ‘delete’, or ‘clean’\n\nfor args,exp in [(('','','none'),None),      (('','','clean'),'delete'),   (('','1','dirty'),'download'),\n                 (('1','','dirty'),None),    (('1','','clean'),'delete'),  (('1','1','clean'),None),\n                 (('1','1','dirty'),'clean'),(('a','b','dirty'),'download'),(('a','b','clean'),'download')]:\n    test_eq(required_change(*args), exp)",
+    "crumbs": [
+      "Media"
+    ]
+  },
+  {
+    "objectID": "media.html#files-in-and-out",
+    "href": "media.html#files-in-and-out",
+    "title": "Media",
+    "section": "Files in and out",
+    "text": "Files in and out\nApplying a remote deletion moves the file to a media.trash folder beside the media folder rather than unlinking it, exactly as Anki does - a sync bug then costs a manual restore, not data. Incoming files normally write straight to the folder, but AnkiWeb still holds pre-normalization filenames from old clients; such a file is stored under a corrected name, and two dirty entries record the fixup for the next upload: a tombstone for the server’s bad name, and the renamed file itself.\n\ntf = Media(td/'tf'/'media', td/'tf'/'collection.mdb')\ntest_eq(tf._add_from_server('ok.png', b'fine'), [('ok.png', _sha1(b'fine'), _mtime_s(tf.folder/'ok.png'), False)])\nbad = 'we|ird.png'                                                   # a name today's Anki would never create\ntest_eq(tf._add_from_server(bad, b'x'), [(bad, None, 0, True), ('weird.png', _sha1(b'x'), _mtime_s(tf.folder/'weird.png'), True)])\ntf._trash_files(['ok.png', 'never-existed.png'])\ntest_eq((tf.folder/'ok.png').exists(), False)\ntest_eq((tf.folder.with_name('media.trash')/'ok.png').read_bytes(), b'fine')",
+    "crumbs": [
+      "Media"
+    ]
+  },
+  {
+    "objectID": "media.html#the-sync-procedure",
+    "href": "media.html#the-sync-procedure",
+    "title": "Media",
+    "section": "The sync procedure",
+    "text": "The sync procedure\nA media sync is: scan the folder, learn the server’s usn (begin, unless the caller already has it from the collection sync’s meta), pull whatever the server has that we haven’t seen, push whatever’s dirty, and - only if anything actually moved - ask the server to compare file counts. Pulling loops over change batches, applying each in one db transaction that also advances lastUsn, so an interrupted sync resumes where it stopped. Pushing has one subtlety: after an upload the server reports its new usn, and we may adopt it as “caught up” only when it’s exactly our old usn plus the files we sent - anything else means another client uploaded concurrently, and we must leave lastUsn alone so the next pull fetches their changes. A failed count check clears the local db and errors, making the next sync re-list everything against the server - Anki’s own recovery path.\n\nsource\n\nMedia.sync\ndef sync(\n    srv, server_usn:NoneType=None\n):\nSync the media folder with srv: pull server changes, push local ones, then verify counts",
+    "crumbs": [
+      "Media"
+    ]
+  },
+  {
+    "objectID": "media.html#media-on-a-collection",
+    "href": "media.html#media-on-a-collection",
+    "title": "Media",
+    "section": "Media on a Collection",
+    "text": "Media on a Collection\nCollection gets three conveniences: media() opens the collection’s own media folder and db (a context manager, like Collection itself), add_media copies data in and returns the filename to cite in a note field - &lt;img src=\"name\"&gt; for pictures, [sound:name] for audio - and sync_media runs a media sync with the saved auth. With this, the one safety rule from the days before media support (“never reference a file we can’t upload”) is discharged: referencing what add_media returns is always syncable.\n\nsource\n\nCollection.sync_media\ndef sync_media(\n    srv:NoneType=None\n):\nMedia-sync with srv (default: the saved auth from a previous sync)\n\nsource\n\n\nCollection.add_media\ndef add_media(\n    file, fname:NoneType=None\n):\nCopy file (a path, or bytes with fname) into the media folder; returns the name to reference in note fields\n\nsource\n\n\nCollection.media\ndef media():\nThis collection’s Media; close it after use (or use as a context manager)\n\ncol = Collection.open(td/'ex'/'collection.anki2')\nname = col.add_media(b'not really a png', 'diagram.png')\nn = col.add(Front=f'What does this show? &lt;img src=\"{name}\"&gt;', Back='the architecture')\ntest_eq(name, 'diagram.png')\ntest_eq((td/'ex'/'collection.media'/name).read_bytes(), b'not really a png')\nwith col.media() as cm:\n    cm._register_changes()\n    test_eq(cm.pending(25), [(name, _sha1(b'not really a png'), _mtime_s(td/'ex'/'collection.media'/name))])\ncol.close()\nn\n\n\nFront: What does this show?  | Back: the architecture | 🏷 -",
+    "crumbs": [
+      "Media"
+    ]
+  },
+  {
+    "objectID": "media.html#against-a-real-server",
+    "href": "media.html#against-a-real-server",
+    "title": "Media",
+    "section": "Against a real server",
+    "text": "Against a real server\nThe same arrangement as the syncer notebook: the anki wheel’s genuine sync server on localhost, with Anki itself playing second client - its media sync runs in a backend thread, so we poll media_sync_status (which also rethrows any error). These cells are eval: false because they need the server process; tests/test_sync.py runs this sequence, plus batching and count-check-failure cases, under pytest.\n\nimport time\n\n\nserver, EP = start_sync_server(td/'server')\n\n\nmcol = Collection.open(td/'sync'/'collection.anki2')\nimg = mcol.add_media(b'PNG our image', 'pic.png')\nmcol.add(Front=f'What is this? &lt;img src=\"{img}\"&gt;', Back='our pic')\nmcol.sync(user='tester', passw='s3kret', endpoint=EP, upload=True)\nmcol.sync_media()\nmcol.sync_media()      # caught up: a no-op\n\nAnki pulls the collection and then the media, and both sides of the story check out: the bytes match, and its media check finds every reference resolved:\n\n(td/'sync2').mkdir()\nmoc = AnkiCollection(str(td/'sync2'/'collection.anki2'))\nauth = moc.sync_login('tester', 's3kret', endpoint=EP)\nst = moc.sync_collection(auth, sync_media=False)\nmoc.close_for_full_sync()\nmoc.full_upload_or_download(auth=auth, server_usn=st.server_media_usn, upload=False)\nmoc.reopen(after_full_sync=True)\nmoc.sync_media(auth)\nwhile moc.media_sync_status().active: time.sleep(0.05)\ntest_eq(Path(moc.media.dir(), 'pic.png').read_bytes(), b'PNG our image')\nchk = moc.media.check()\ntest_eq((list(chk.missing), list(chk.unused)), ([], []))\n\nThen the reverse direction: Anki adds a file and deletes ours, and one sync_media brings us both changes - their audio arrives, and our deleted picture moves to media.trash, leaving a clean sync state:\n\n(td/'oracle.mp3').write_bytes(b'ORACLE AUDIO')\noname = moc.media.add_file(str(td/'oracle.mp3'))\nmoc.media.trash_files(['pic.png'])\nmoc.sync_media(auth)\nwhile moc.media_sync_status().active: time.sleep(0.05)\n\nmcol.sync_media()\nwith mcol.media() as m:\n    test_eq((m.folder/oname).read_bytes(), b'ORACLE AUDIO')\n    test_eq((m.folder/'pic.png').exists(), False)\n    test_eq((m.folder.with_name('media.trash')/'pic.png').exists(), True)\n    test_eq((m.pending(25), m.count()), ([], 1))\nmoc.close()\nmcol.close()\nserver.terminate()",
+    "crumbs": [
+      "Media"
+    ]
+  },
+  {
+    "objectID": "core.html",
+    "href": "core.html",
+    "title": "Core API",
+    "section": "",
+    "text": "Each call opens the default collection, does its work, and closes up, so there’s no session state to manage. fb variants take plain front/back strings and scalar ids.\nimport tempfile\nfrom fastcore.test import *\nos.environ['FASTANKI_DIR'] = tempfile.mkdtemp()\nThis notebook runs against a throwaway data folder; without that override, everything below uses ~/.fastanki.",
+    "crumbs": [
+      "Core API"
+    ]
+  },
+  {
+    "objectID": "core.html#cards-and-notes",
+    "href": "core.html#cards-and-notes",
+    "title": "Core API",
+    "section": "Cards and notes",
+    "text": "Cards and notes\n\nsource\n\nadd_cloze_card\ndef add_cloze_card(\n    text:str, # Cloze text with `{c1::hidden}` deletions\n    back_extra:str='', # Extra info shown on the back of every card\n    deck:str='Default', # Deck name (`::` for nesting; created if needed)\n    tags:str=None, # Space-separated tags\n):\nAdd a Cloze card ({c1::hidden} syntax), returning the new note id.\n\nsource\n\n\nadd_fb_card\ndef add_fb_card(\n    front:str, # Front (question) text\n    back:str, # Back (answer) text\n    deck:str='Default', # Deck name (`::` for nesting; created if needed)\n    tags:str=None, # Space-separated tags\n):\nAdd a Basic card, returning the new note id.\n\nsource\n\n\nadd_card\ndef add_card(\n    model:str='Basic', # Notetype name (the tool description lists each notetype's fields)\n    deck:str='Default', # Deck name (`::` for nesting; created if needed)\n    tags:str=None, # Space-separated tags\n    fields:dict=None, # Field name -&gt; value, e.g. {'Front':'2+2', 'Back':'4'}\n):\nAdd a card of any notetype, returning the new note id. Field names must match the notetype.\n\nnid = add_fb_card('What is the capital of France?', 'Paris', tags='geo')\nnote = add_card(deck='Spanish::Vocab', tags='spanish', fields={'Front':'hola','Back':'hello'})\nnote\n\n1784759309644\n\n\n\nczid = add_cloze_card('Minus times {{c1::minus}} is {{c2::plus}}', tags='maths')\ntest_eq(type(czid), int)\n\nTo put an image or sound on a card, first add_media the file, then cite the returned name in a field with &lt;img src=\"name\"&gt; or [sound:name]. The name can differ from what you passed (see fastanki.media for the rules), so always use the returned one:\n\nsource\n\n\nadd_media\ndef add_media(\n    path:str, # File to copy into the collection's media folder\n    fname:str=None, # Name to store it under (default: the file's own name)\n):\nAdd a media file to the collection, returning the filename to cite in fields:  or [sound:name].\n\np = Path(tempfile.mkdtemp())/'chart.png'\np.write_bytes(b'png bytes here')\nname = add_media(p)\ntest_eq(name, 'chart.png')\nimgid = add_fb_card(f'What trend does this show? &lt;img src=\"{name}\"&gt;', 'up and to the right')\ntest_eq((Path(os.environ['FASTANKI_DIR'])/'collection.media'/name).read_bytes(), b'png bytes here')",
+    "crumbs": [
+      "Core API"
+    ]
+  },
+  {
+    "objectID": "core.html#finding-updating-removing",
+    "href": "core.html#finding-updating-removing",
+    "title": "Core API",
+    "section": "Finding, updating, removing",
+    "text": "Finding, updating, removing\n\nsource\n\nfind_note_ids\ndef find_note_ids(\n    deck:str=None, # Deck name (matches subdecks too)\n    tag:str=None, # Tag to match\n    added_days:int=None, # Only notes added in the last this-many days\n    fields:dict=None, # Field name -&gt; case-insensitive substring, e.g. {'Front':'hello'}\n):\nIds of notes matching all given criteria.\n\nsource\n\n\nfind_notes\ndef find_notes(\n    deck:str=None, # Deck name (matches subdecks too)\n    tag:str=None, # Tag to match\n    added_days:int=None, # Only notes added in the last this-many days\n    fields:dict=None, # Field name -&gt; case-insensitive substring, e.g. {'Front':'hello'}\n):\nNotes matching all given criteria.\n\nsource\n\n\nfind_card_ids\ndef find_card_ids(\n    deck:str=None, # Deck name (matches subdecks too)\n    tag:str=None, # Tag to match\n    added_days:int=None, # Only cards added in the last this-many days\n    is_due:bool=None, # Only cards due for review\n    fields:dict=None, # Field name -&gt; case-insensitive substring, e.g. {'Front':'hello'}\n):\nIds of cards matching all given criteria.\n\nsource\n\n\nfind_cards\ndef find_cards(\n    deck:str=None, # Deck name (matches subdecks too)\n    tag:str=None, # Tag to match\n    added_days:int=None, # Only cards added in the last this-many days\n    is_due:bool=None, # Only cards due for review\n    fields:dict=None, # Field name -&gt; case-insensitive substring, e.g. {'Front':'hello'}\n):\nCards matching all given criteria.\n\nsource\n\n\nget_note\ndef get_note(\n    note_id:int, # Id of the note to retrieve\n):\nRetrieve a note by id.\n\ntest_eq(find_note_ids(tag='geo'), [nid])\ntest_eq(find_note_ids(deck='Spanish'), [note])\ntest_eq(find_note_ids(fields={'Front':'capital'}), [nid])\ntest_eq(len(find_cards()), 5)\nget_note(nid)\n\n\nFront: What is the capital of France? | Back: Paris | 🏷 geo\n\n\n\n\nsource\n\n\ndel_note\ndef del_note(\n    notes:list, # Note ids (or `Note` objects) to delete, along with their cards\n):\nDelete note(s) (and their cards) by Note or id, singly or in a list.\n\nsource\n\n\nupdate_fb_note\ndef update_fb_note(\n    note_id:int, # Id of the Basic note to update\n    front:str='', # New Front text (empty leaves it unchanged)\n    back:str='', # New Back text (empty leaves it unchanged)\n    tags:str=None, # Space-separated tags, replacing all existing tags\n    add_tags:str=None, # Space-separated tags to add, keeping existing ones\n):\nUpdate a Basic note’s front/back and/or tags.\n\nsource\n\n\nupdate_note\ndef update_note(\n    note, tags:NoneType=None, add_tags:NoneType=None, **fields\n):\nUpdate fields and/or tags of a Note or note id; tags replaces, add_tags appends.\n\nn2 = update_note(note, Back='hello!', add_tags='greeting')\ntest_eq(n2['Back'], 'hello!')\ntest_eq(n2.tags, ['spanish','greeting'])\ntest_eq(update_fb_note(nid, back='Paris, France').fields['Back'], 'Paris, France')\ntest_eq(del_note([nid, czid]), 2)\ntest_eq(find_note_ids(tag='geo'), [])",
+    "crumbs": [
+      "Core API"
+    ]
+  },
+  {
+    "objectID": "core.html#syncing",
+    "href": "core.html#syncing",
+    "title": "Core API",
+    "section": "Syncing",
+    "text": "Syncing\n\nsource\n\nsync\ndef sync(\n    user:str=None, # AnkiWeb email (only needed the first time)\n    passw:str=None, # AnkiWeb password (only the first time; a host key is saved after)\n    endpoint:str=None, # Sync server URL (defaults to AnkiWeb)\n    upload:bool=False, # Force-upload the local collection, replacing the server copy\n    media:bool=True, # Also sync media files\n):\nSync the default collection with AnkiWeb. Pass credentials the first time; they’re saved after that.\nThe first sync of a fresh collection is a full one: by default that’s a download (the server copy wins), and replacing a non-empty server copy with a fresh empty collection is refused unless the server side is empty too. Pass upload=True deliberately to push your local copy wholesale.\n\nsync(user=os.environ['ANKI_USER'], passw=os.environ['ANKI_PASS'])  # first time\nsync()  # after that",
+    "crumbs": [
+      "Core API"
+    ]
+  },
+  {
+    "objectID": "core.html#tool-use",
+    "href": "core.html#tool-use",
+    "title": "Core API",
+    "section": "Tool use",
+    "text": "Tool use\n\nsource\n\nanki_tools\ndef anki_tools():\nCall self as a function.\n\nanki_tools()\n\n&`[add_card, add_fb_card, add_cloze_card, add_media, find_notes, find_note_ids, find_cards, find_card_ids, get_note, del_note, update_fb_note, sync]`\n\n\nadd_card handles any notetype via a fields dict, and rejects unknown field names with a clear error:\n\nczid = add_card(model='Cloze', fields={'Text':'{{c1::pi}} ~ 3.14'})\ntest_eq(get_note(czid)['Text'], '{{c1::pi}} ~ 3.14')\ntest_fail(lambda: add_card(fields={'Nope':'x'}), contains='Nope')   # unknown field -&gt; clear error",
+    "crumbs": [
+      "Core API"
+    ]
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "fastanki",
+    "section": "",
+    "text": "fastanki reads and writes Anki’s collection format and speaks the AnkiWeb sync protocol directly, in Python. There’s no dependency on the Anki application or its Rust library: your cards live in a small sqlite file of fastanki’s own, and reach your desktop and phone the same way any Anki client’s changes do, by syncing through AnkiWeb. Media files sync too: add_media a picture or sound, cite it in a field, and it reaches your other devices alongside the cards.",
+    "crumbs": [
+      "fastanki"
+    ]
+  },
+  {
+    "objectID": "index.html#usage",
+    "href": "index.html#usage",
+    "title": "fastanki",
+    "section": "Usage",
+    "text": "Usage\n\nInstallation\nInstall latest from pypi\n$ pip install fastanki\n\n\nDocumentation\n\nfrom fastanki import *\nimport os, tempfile",
+    "crumbs": [
+      "fastanki"
+    ]
+  },
+  {
+    "objectID": "index.html#functional-api",
+    "href": "index.html#functional-api",
+    "title": "fastanki",
+    "section": "Functional API",
+    "text": "Functional API\nadd_card lets you create a new card with a single function call. Just pass your field values as keyword arguments. By default it uses the Basic note type and Default deck, but you can specify any model, deck, or tags you like.\n\nnotezh = add_card(fields={'Front':'你好','Back':'hello'})\n\nfind_cards searches your collection and returns a list of Card objects. Criteria are keyword arguments, all optional and combined with AND:\n\ndeck='Spanish' matches that deck and its subdecks\ntag='vocab' matches a tag\nadded_days=7 matches cards added in the last week\nis_due=True matches cards due for review\nAny other keyword is a field name, matched as a case-insensitive substring: Front='hello'\nwhere=\"n.id=?\", args=(nid,) drops through to SQL over notes n joined with cards c\n\n\ncards = find_cards(deck='Default')\ncards\n\n[Card(1784759309631, nid=1784759309631, due=1, ivl=0, queue=0)]\n\n\n\ncards[0]\n\n\nCard 1784759309631 (nid: 1784759309631, due: 1, ivl: 0d, queue: 0)\n\n\n\n\nfind_card_ids(deck='Default')\n\n[1784759309631]\n\n\nfind_notes takes the same criteria and returns one Note per matching note, where find_cards may return several cards for a note (a Cloze note generates one card per cloze number, for instance).\n\nnotes = find_notes(fields={'Back':'hello'})\nnotes\n\n[Note(1784759309631, Front='你好', Back='hello', tags=[])]\n\n\n\nnote = notes[0]\nnote\n\n\nFront: 你好 | Back: hello | 🏷 -\n\n\n\n\nfind_note_ids(fields={'Back':'hello'})\n\n[1784759309631]\n\n\nupdate_note modifies an existing note’s fields and/or tags. Pass either a Note object or a note ID, along with any fields you want to change as keyword arguments. For tags: - tags=['a','b'] — replaces all tags - add_tags='newtag' — adds without removing existing tags\n\nupdate_note(note, Back=\"updated answer\", tags='testtag')\n\n\nFront: 你好 | Back: updated answer | 🏷 testtag\n\n\n\n\nupdate_note(note, add_tags='moretagz')\n\n\nFront: 你好 | Back: updated answer | 🏷 testtag moretagz\n\n\n\n\nget_note(note.id)\n\n\nFront: 你好 | Back: updated answer | 🏷 testtag moretagz\n\n\n\n\ndel_note([notezh, note])\n\n2\n\n\nsync connects to AnkiWeb: pass your credentials the first time, and they’re saved (as a host key, not your password) for later calls. The first sync of a fresh collection is a full download of your existing AnkiWeb collection; after that, syncs exchange deltas in both directions. fastanki will never replace a non-empty server collection without an explicit upload=True. Each sync also syncs media: to put an image or sound on a card, add_media the file and cite the returned name in a field with &lt;img src=\"name\"&gt; or [sound:name].\n\nsync(user=os.environ['ANKI_USER'], passw=os.environ['ANKI_PASS'])  # first time\nsync()  # after that\n\nhost_number: 5",
+    "crumbs": [
+      "fastanki"
+    ]
+  },
+  {
+    "objectID": "index.html#tool-use",
+    "href": "index.html#tool-use",
+    "title": "fastanki",
+    "section": "Tool use",
+    "text": "Tool use\n\nanki_tools()\n\n&`[add_card, add_fb_card, add_cloze_card, add_media, find_notes, find_note_ids, find_cards, find_card_ids, get_note, del_note, update_fb_note, sync]`\n\n\nHere are the available tools: &[add_card, add_fb_card, add_cloze_card, find_notes, find_note_ids, find_cards, find_card_ids, get_note, del_note, update_fb_note, sync].\nTry to find all my notes. List the IDs and contents you see.\nDelete them.\nTry finding all notes again.\nTry adding a note of your choice using add_fb_card and tell me the id.\nTry finding all notes again.\nOK try get_note with it.\nDelete it now.\nOK create, update, and verify a note now.\nTry the various find ones that we haven’t done yet.\nSure. Delete that note, then sync.",
+    "crumbs": [
+      "fastanki"
+    ]
+  },
+  {
+    "objectID": "index.html#oo-api",
+    "href": "index.html#oo-api",
+    "title": "fastanki",
+    "section": "OO API",
+    "text": "OO API\nThe functional API opens and closes the collection on every call. For a batch of work, Collection keeps it open, and everything the functions above do is a method here.\n\ncol = Collection.open()\ncol.path.name\n\n'collection.anki2'\n\n\n\ncol.notetypes(), col.decks()\n\n(['Basic', 'Cloze'], ['Default'])\n\n\n\nn = col.add(Front='adiós', Back='goodbye', deck='Spanish::Vocab', tags=['spanish'])\nn\n\n\nFront: adiós | Back: goodbye | 🏷 spanish\n\n\n\n\ncol.due_counts('Spanish')\n\n(1, 0, 0)\n\n\n\ncol.find_notes(deck='Spanish')\n\n[Note(1784759309645, Front='adiós', Back='goodbye', tags=['spanish'])]\n\n\n\ncol.remove_deck('Spanish')\ncol.close()\n\nCollection is also a context manager, so a one-shot batch reads naturally:\n\nwith Collection.open() as c: c.add(Front='hola', Back='hello')",
+    "crumbs": [
+      "fastanki"
+    ]
+  },
+  {
+    "objectID": "schema.html",
+    "href": "schema.html",
+    "title": "Collection files",
+    "section": "",
+    "text": "An .anki2 collection is a single sqlite file. Anki’s desktop app drives it through a Rust library, but nothing about the file needs Rust: it’s ordinary tables of notes, cards and review history, plus a handful of columns holding small protobuf messages (notetype, deck and deck-config settings). This module creates and connects to those files directly. The protobuf classes in fastanki._proto are generated from Anki’s own .proto files, so the blobs we write are byte-compatible with what Anki writes.\nfrom fastcore.test import *\nimport tempfile\nfrom anki.collection import Collection as AnkiCollection\nfrom google.protobuf.json_format import MessageToDict\nThroughout this notebook we check our work against Anki itself: the anki package is a development-time dependency only, used as an oracle. If Anki can open a file we created, add a note to it, and pass its own database check, we got the details right.",
+    "crumbs": [
+      "Collection files"
+    ]
+  },
+  {
+    "objectID": "schema.html#the-schema",
+    "href": "schema.html#the-schema",
+    "title": "Collection files",
+    "section": "The schema",
+    "text": "The schema\nThe DDL below is dumped straight from a collection created by Anki 26.05 (the test that follows re-dumps and compares, so drift shows up here rather than in the field). Two details matter. The col table is a leftover from the old single-row JSON format: schema 18 keeps the row but stores empty strings in the JSON columns, with the real data moved to proper tables. And several columns are declared COLLATE unicase, a custom case-insensitive collation that Anki’s Rust registers with sqlite; we must register our own equivalent before any query that compares those columns.\n\nsource\n\nconnect\ndef connect(\n    path\n):\nConnect to collection sqlite file at path, with Anki’s unicase collation and apsw best practices\n\nsource\n\n\nunicase\ndef unicase(\n    a:str, b:str\n):\nsqlite collation function matching Anki’s case-insensitive unicase\ncasefold is not identical to the Unicode case folding in Rust’s unicase crate for every codepoint, but sqlite only consults the collation for ordering and uniqueness checks on names, where casefold agrees for any name you’re likely to meet.\nTo confirm the DDL still matches what Anki generates, create a fresh collection with the oracle and compare table-by-table:\n\ntd = Path(tempfile.mkdtemp())\noc = AnkiCollection(str(td/'collection.anki2'))\noc.close()\nocon = connect(td/'collection.anki2')\ntheirs = {r[0]: r[1] for r in ocon.execute(\"select name, sql from sqlite_master where sql is not null and name not like 'sqlite_stat%'\")}\nmcon = connect(':memory:')\nmcon.execute(SCHEMA)\nours = {r[0]: r[1] for r in mcon.execute(\"select name, sql from sqlite_master where sql is not null\")}\ntest_eq(ours, theirs)",
+    "crumbs": [
+      "Collection files"
+    ]
+  },
+  {
+    "objectID": "schema.html#timestamps-and-ids",
+    "href": "schema.html#timestamps-and-ids",
+    "title": "Collection files",
+    "section": "Timestamps and ids",
+    "text": "Timestamps and ids\n\nsource\n\ncreation_stamp\ndef creation_stamp():\nCollection creation time: the most recent 4am in the local timezone\n\nsource\n\n\nday_offset\ndef day_offset():\nMinutes west of UTC, Anki’s creationOffset (eg Australia at +10h is -600)\n\nsource\n\n\nnow_ms\ndef now_ms():\nCall self as a function.\nAnki dates everything from crt, the collection creation stamp, pinned to a 4am day rollover so late-night reviews count as the day before. creationOffset records the timezone it was computed in.\nObject ids are epoch milliseconds, bumped past any existing id on collision:\n\nsource\n\n\nts_id\ndef ts_id(\n    con, table\n):\nNew timestamp-based id for table: now in ms, or 1 past the max existing id",
+    "crumbs": [
+      "Collection files"
+    ]
+  },
+  {
+    "objectID": "schema.html#default-objects",
+    "href": "schema.html#default-objects",
+    "title": "Collection files",
+    "section": "Default objects",
+    "text": "Default objects\nA working collection needs one deck (“Default”, id 1), one deck config (id 1), and at least one notetype. We build Basic and Cloze, the two our API creates cards with; anything fancier arrives via sync from collections that already have it. The builders construct the same protobuf messages Anki’s stock-notetype code does, including the precomputed reqs (which fields must be non-empty for each template to generate a card).\n\nsource\n\nnotetype_cfg\ndef notetype_cfg(\n    kind:int=0, # 0 normal, 1 cloze\n    stock:int=0, # original_stock_kind, for Anki's \"restore to default\" feature\n    reqs:NoneType=None, # [(card_ord, 'any'|'all', [field_ords])] card generation requirements\n    css:str='.card {\\n    font-family: arial;\\n    font-size: 20px;\\n    line-height: 1.5;\\n    text-align: center;\\n    color: black;\\n    background-color: white;\\n}\\n'\n):\nCall self as a function.\n\nsource\n\n\ntemplate_cfg\ndef template_cfg(\n    q, a\n):\nCall self as a function.\n\nsource\n\n\nfield_cfg\ndef field_cfg(\n    tag:NoneType=None, # Cloze field role marker\n    prevent_deletion:bool=False, # Protect the field from deletion in Anki's UI\n):\nCall self as a function.\nNow the two stock notetypes. Each is a set of rows: one in notetypes, one per field in fields, one per template in templates. add_notetype inserts them all:\n\nsource\n\n\nadd_cloze\ndef add_cloze(\n    con\n):\nCall self as a function.\n\nsource\n\n\nadd_basic\ndef add_basic(\n    con\n):\nCall self as a function.\n\nsource\n\n\nadd_notetype\ndef add_notetype(\n    con, name, flds, tmpls, cfg\n):\nInsert a notetype with flds [(name, config_bytes)] and tmpls [(name, config_bytes)], returning its id\nThe test: build ours, decode Anki’s from the oracle collection, and compare as dicts. The random per-field ids (used by newer Ankis to match fields when merging imports) will differ, so they’re dropped before comparing:\n\nadd_basic(mcon); _ = add_cloze(mcon)\n\n\ndef ntdicts(con):\n    \"All notetype/field/template config blobs for Basic and Cloze, decoded, random ids stripped\"\n    qs = [('notetype', notetypes_pb2.Notetype.Config, \"select n.name, 0, n.config from notetypes n\"),\n          ('field', notetypes_pb2.Notetype.Field.Config, \"select n.name, f.ord, f.config from fields f join notetypes n on f.ntid=n.id\"),\n          ('template', notetypes_pb2.Notetype.Template.Config, \"select n.name, t.ord, t.config from templates t join notetypes n on t.ntid=n.id\"),]\n    res = {}\n    for kind,msgcls,q in qs:\n        for name,ord_,blob in con.execute(q + \" where n.name in ('Basic','Cloze')\"):\n            m = msgcls(); m.ParseFromString(blob)\n            d = MessageToDict(m, preserving_proto_field_name=True); d.pop('id', None)\n            res[kind,name,ord_] = d\n    return res\n\ntest_eq(ntdicts(mcon), ntdicts(ocon))",
+    "crumbs": [
+      "Collection files"
+    ]
+  },
+  {
+    "objectID": "schema.html#creating-a-collection",
+    "href": "schema.html#creating-a-collection",
+    "title": "Collection files",
+    "section": "Creating a collection",
+    "text": "Creating a collection\ncreate_collection writes everything a fresh collection needs: the col row (legacy JSON columns as empty strings), the config entries Anki expects, the Default deck and deck config, and the two notetypes. The values mirror what Anki 26.05 writes on profile creation, checked by the oracle test at the end.\n\nsource\n\ndeck_kind\ndef deck_kind(\n    config_id:int=1\n):\nCall self as a function.\n\nsource\n\n\ndeck_common\ndef deck_common():\nCall self as a function.\n\nsource\n\n\ndefault_deck_config\ndef default_deck_config():\nCall self as a function.\n\nsource\n\n\ncreate_collection\ndef create_collection(\n    path\n):\nCreate a new empty schema-18 collection at path, returning a connection to it\nThe moment of truth: Anki opens a file we wrote from nothing, passes its own database check, and adds a note to it.\n\ncpath = td/'ours'/'collection.anki2'\ncon = create_collection(cpath)\ncon.close()\nac = AnkiCollection(str(cpath))\nprob = ac.fix_integrity()\ntest_eq(prob[1], True)\nprob\n\n('Database rebuilt and optimized.', True)\n\n\n\nnt = ac.models.by_name('Basic')\nn = ac.new_note(nt)\nn['Front'],n['Back'] = 'hello','world'\nac.add_note(n, 1)\nac.close()\ncon = connect(cpath)\nflds, = con.execute('select flds from notes').fetchone()\ntest_eq(flds, 'hello\\x1fworld')\ntest_eq(con.execute('select count(*) from cards').fetchone()[0], 1)\n\nBeyond passing fix_integrity, the values a fresh collection is born with match Anki’s own. The default deck and its config decode to identical protobufs, and the config table agrees key for key — excepting curModel, which names the Basic notetype by its per-collection timestamp id:\n\nourcon = create_collection(td/'cmp.anki2')\ndef deckblob(c):\n    cm,kd = c.execute('select common, kind from decks where id=1').fetchone()\n    return (MessageToDict(decks_pb2.Deck.Common.FromString(cm), preserving_proto_field_name=True),\n            MessageToDict(decks_pb2.Deck.KindContainer.FromString(kd), preserving_proto_field_name=True))\ndef dconfblob(c):\n    b, = c.execute('select config from deck_config where id=1').fetchone()\n    return MessageToDict(deck_config_pb2.DeckConfig.Config.FromString(b), preserving_proto_field_name=True)\ndef conftbl(c): return {k:json.loads(v) for k,v in c.execute('select key, val from config') if k!='curModel'}\ntest_eq(deckblob(ourcon), deckblob(ocon))\ntest_eq(dconfblob(ourcon), dconfblob(ocon))\ntest_eq(conftbl(ourcon), conftbl(ocon))\nourcon.close()",
+    "crumbs": [
+      "Collection files"
+    ]
+  },
+  {
+    "objectID": "collection.html",
+    "href": "collection.html",
+    "title": "Collections",
+    "section": "",
+    "text": "With fastanki.schema handling the file format, this module does the actual work: a Collection class that adds, finds, updates and removes notes, generating cards the way Anki would. Every change is bookkept for sync (usn=-1 marks pending rows, deletions go to graves, col.mod tracks modification time), so a collection managed here syncs cleanly with AnkiWeb and any other Anki client.\nimport tempfile\nfrom fastcore.test import *\nfrom anki.collection import Collection as AnkiCollection\nimport anki.lang\nfrom anki.utils import field_checksum as anki_csum\nfrom unittest.mock import patch as mock_patch",
+    "crumbs": [
+      "Collections"
+    ]
+  },
+  {
+    "objectID": "collection.html#text-utilities",
+    "href": "collection.html#text-utilities",
+    "title": "Collections",
+    "section": "Text utilities",
+    "text": "Text utilities\nAnki fingerprints the first field of every note with a checksum used for duplicate detection, computed over the text with HTML stripped but media filenames kept (so &lt;img src=cat.jpg&gt; and a note that mentions cat.jpg collide, as they should). The guid identifies a note across collections, as 10 or so characters of base91.\n\nsource\n\nguid64\ndef guid64():\nA new random note guid, in Anki’s base91 encoding\n\nsource\n\n\nfield_csum\ndef field_csum(\n    text:str\n):\nAnki’s dupe-detection checksum: first 4 bytes of the sha1 of the stripped first field\n\nsource\n\n\nstrip_html_media\ndef strip_html_media(\n    s:str\n):\nStrip HTML from s, preserving media filenames, matching Anki’s checksum preprocessing\nChecked directly against Anki’s own implementation, on plain text, HTML, entities, and media references:\n\nanki.lang.set_lang('en')  # pylib's checksum helper strips HTML through a backend\nfor s in ['hello', 'dos', '&lt;b&gt;test&lt;/b&gt;', 'a &amp; b', '&lt;img src=cat.jpg&gt;', \"&lt;img src='dog gif.gif'&gt;x\",\n          '[sound:beep.mp3]', 'caf\\xe9&nbsp;au lait', '&lt;style&gt;p {}&lt;/style&gt;text']:\n    test_eq(field_csum(s), anki_csum(s))\n\n\ntest_eq(field_csum('hello'), 2868168221)\ng = guid64()\nassert 1 &lt;= len(g) &lt;= 11 and set(g) &lt;= set(map(chr, _B91))\ng\n\n'_&gt;o$MB$jHA'",
+    "crumbs": [
+      "Collections"
+    ]
+  },
+  {
+    "objectID": "collection.html#opening-a-collection",
+    "href": "collection.html#opening-a-collection",
+    "title": "Collections",
+    "section": "Opening a collection",
+    "text": "Opening a collection\nfastanki keeps its own collection, separate from any desktop Anki profile: on machines where fastanki runs there’s usually no desktop Anki at all, and where there is one, staying out of its data folder means never fighting it for the sqlite lock. The desktop sees our changes the same way your phone does, through AnkiWeb sync.\n\nsource\n\nCollection\ndef Collection(\n    path\n):\nInitialize self. See help(type(self)) for accurate signature.\n\nsource\n\n\ndata_dir\ndef data_dir():\nfastanki’s data folder (override with FASTANKI_DIR)\nq and q1 keep the sql one-liners readable throughout the rest of the module. _dirty bumps col.mod, which is how sync notices there’s something to send.\n\ntd = Path(tempfile.mkdtemp())\ncol = Collection.open(td/'collection.anki2')\ntest_eq(col.q1('select ver from col'), 18)",
+    "crumbs": [
+      "Collections"
+    ]
+  },
+  {
+    "objectID": "collection.html#notetypes",
+    "href": "collection.html#notetypes",
+    "title": "Collections",
+    "section": "Notetypes",
+    "text": "Notetypes\nA notetype’s structure spans three tables plus a protobuf config. NT gathers what note operations need: field names, sort field, kind, and the per-template card generation requirements.\n\nsource\n\nCollection.notetypes\ndef notetypes():\nCall self as a function.\n\nsource\n\n\nCollection.nt\ndef nt(\n    name\n):\nNotetype structure by name (case-insensitive)\n\nsource\n\n\nNT\ndef NT(\n    con, ntid, name\n):\nA notetype’s structure: fields, templates, and card generation rules\n\ncol.nt('Basic')\n\nNT('Basic', flds=['Front', 'Back'], 1 templates)\n\n\nThe name=? lookup goes through sqlite’s unicase collation on the name column, so col.nt('basic') finds Basic:\n\ntest_eq(col.nt('basic').id, col.nt('Basic').id)\ntest_eq(col.notetypes(), ['Basic','Cloze'])",
+    "crumbs": [
+      "Collections"
+    ]
+  },
+  {
+    "objectID": "collection.html#decks",
+    "href": "collection.html#decks",
+    "title": "Collections",
+    "section": "Decks",
+    "text": "Decks\nDeck names nest with :: in Anki’s UI, but the table stores the separator as \\x1f, one row per level. Adding Spanish::Vocab creates Spanish too, as Anki does.\n\nsource\n\nCollection.decks\ndef decks():\nCall self as a function.\n\nsource\n\n\nCollection.deck_id\ndef deck_id(\n    name, create:bool=False\n):\nId of deck name (::-separated), optionally creating it (and any missing parents)\n\ndid = col.deck_id('Spanish::Vocab', create=True)\ntest_eq(col.decks(), ['Default','Spanish','Spanish::Vocab'])\ntest_eq(col.deck_id('Spanish::Vocab'), did)\ntest_is(col.deck_id('Nope'), None)",
+    "crumbs": [
+      "Collections"
+    ]
+  },
+  {
+    "objectID": "collection.html#adding-notes",
+    "href": "collection.html#adding-notes",
+    "title": "Collections",
+    "section": "Adding notes",
+    "text": "Adding notes\nNote is a plain holder for one row of the notes table, with dict-style field access by name. The interesting work is in add_note: joining fields with \\x1f, computing sfld and csum, and deciding which cards to generate. For normal notetypes each template carries a requirement (“any of these fields non-empty” or “all of them”); for cloze notetypes there’s one card per distinct {c1::...} number across the fields.\nCard generation follows Anki’s rule rather than the stored req cache: a normal template generates a card when its front would render non-empty for the note’s non-empty fields. renders_with_fields parses the front template ({Field}, {#Field}…{{/Field}}, {^Field}…{{/Field}}, comments) and reports whether any non-empty field reaches the output; static text alone never counts. field_is_empty matches Anki: whitespace and empty &lt;br&gt;/&lt;div&gt; tags only.\n\nsource\n\nrenders_with_fields\ndef renders_with_fields(\n    qfmt, nonempty\n):\nWould front template qfmt render non-empty given the set of nonempty field names?\n\nsource\n\n\nfield_is_empty\ndef field_is_empty(\n    s\n):\nCall self as a function.\n\nsource\n\n\nnote_cards\ndef note_cards(\n    nt, fields, tags:tuple=()\n):\nTemplate ordinals that generate cards for a note’s fields (values in field order) and tags, using Anki’s render rule\n\nsource\n\n\nNote\ndef Note(\n    id, guid, mid, mod, usn, tags, flds, nt\n):\nInitialize self. See help(type(self)) for accurate signature.\nCloze ordinals are 1-based in note text ({c1::...}) but 0-based as card ords, so note_cards returns them shifted. KIND_NONE (0) requirements mean the template never generates; any is 1 and all is 2 in the protobuf enum.\n\nbnt = col.nt('Basic')\ntest_eq(note_cards(bnt, ['hi','']), [0])\ntest_eq(note_cards(bnt, ['','back only']), [])\ncnt = col.nt('Cloze')\ntest_eq(note_cards(cnt, ['{{c1::a}} and {{c3::b}}','']), [0,2])\ntest_eq(note_cards(cnt, ['no clozes here','']), [])\n\nAnd the render rule agrees with Anki itself across the reversed and optional-reversed (conditional {#Add Reverse}) notetypes: Anki generates the cards, and note_cards predicts the same ordinals from the note’s fields.\n\ngp = Path(tempfile.mkdtemp())/'gen.anki2'\naoc = AnkiCollection(str(gp))\nwant = []\nfor mname, flds in [('Basic (and reversed card)', dict(Front='q', Back='a')),\n                    ('Basic (and reversed card)', dict(Front='q', Back='')),\n                    ('Basic (optional reversed card)', dict(Front='q', Back='a')),\n                    ('Basic (optional reversed card)', dict(Front='q', Back='a', **{'Add Reverse':'y'}))]:\n    n = aoc.new_note(aoc.models.by_name(mname))\n    for k,v in flds.items(): n[k] = v\n    aoc.add_note(n, 1)\n    want.append((mname, flds, sorted(c.ord for c in n.cards())))\naoc.close()\nfc = Collection(gp)\nfor mname, flds, ords in want: test_eq(note_cards(fc.nt(mname), [flds.get(f,'') for f in fc.nt(mname).flds]), ords)\nfc.close()\n\nNow add itself. Anki assigns each new card a position (due for a new card is its queue position, not a date), drawn from the nextPos counter:\n\nsource\n\n\nCollection.add\ndef add(\n    model:str='Basic', deck:str='Default', tags:NoneType=None, **fields\n):\nAdd a note (and its cards), returning the Note\n\nsource\n\n\nCollection.get_note\ndef get_note(\n    nid\n):\nRetrieve a Note by id\n\nn = col.add(Front='hola', Back='hello', deck='Spanish::Vocab', tags='spanish')\nn\n\n\nFront: hola | Back: hello | 🏷 spanish\n\n\n\n\ntest_eq(n['Front'], 'hola')\ntest_eq(n.tags, ['spanish'])\ntest_eq(col.q1('select count(*) from cards where nid=?', n.id), 1)\ntest_eq(col.q1('select due from cards where nid=?', n.id), 1)\ncz = col.add(model='Cloze', Text='{{c1::uno}} y {{c2::dos}}')\ntest_eq(col.q('select ord, due from cards where nid=? order by ord', cz.id), [(0,2),(1,3)])",
+    "crumbs": [
+      "Collections"
+    ]
+  },
+  {
+    "objectID": "collection.html#updating-and-removing",
+    "href": "collection.html#updating-and-removing",
+    "title": "Collections",
+    "section": "Updating and removing",
+    "text": "Updating and removing\nUpdates rewrite the note row with fresh mod, usn=-1, sfld and csum, and generate any cards a new cloze number now requires (never deleting existing ones, matching Anki). Removals record graves, the tombstones sync uses to propagate deletions: type 0 is a card, 1 a note, 2 a deck.\n\nsource\n\nCollection.update_note\ndef update_note(\n    note, tags:NoneType=None, add_tags:NoneType=None, **fields\n):\nUpdate fields and/or tags of note (a Note or note id), returning the updated Note\n\nn2 = col.update_note(n, Back='hello!', add_tags='greeting')\ntest_eq(n2['Back'], 'hello!')\ntest_eq(n2.tags, ['spanish','greeting'])\ncz2 = col.update_note(cz.id, Text='{{c1::uno}} {{c2::dos}} {{c3::tres}}')\ntest_eq(col.q1('select count(*) from cards where nid=?', cz.id), 3)\n\n\nsource\n\n\nCollection.remove_deck\ndef remove_deck(\n    name\n):\nRemove deck name and its subdecks, with their cards and notes\n\nsource\n\n\nCollection.remove_notes\ndef remove_notes(\n    nids\n):\nRemove notes (and their cards) by id, recording graves for sync\nAnki’s “remove deck” takes the notes down with it when their cards all lived there; we do the simpler, stricter thing and remove every note that had a card in the deck. The functional API only exposes deck removal through Collection, so surprises stay contained.\n\ncol.add(Front='bye', deck='Doomed')\ntest_eq(col.remove_deck('Doomed'), 1)\ntest_is(col.deck_id('Doomed'), None)\ntest_eq(col.q1(\"select count(*) from notes where flds like 'bye%'\"), 0)\ntest_eq(col.q1(\"select count(*) from graves where type=2\"), 1)",
+    "crumbs": [
+      "Collections"
+    ]
+  },
+  {
+    "objectID": "collection.html#finding",
+    "href": "collection.html#finding",
+    "title": "Collections",
+    "section": "Finding",
+    "text": "Finding\nAnki has a search language; we have Python. Keyword arguments compose to SQL: deck, tag and added_days map to indexed columns, any other keyword is treated as a field name and matched case-insensitively as a substring, and where/args drop through to raw SQL against the notes table (aliased n) joined with cards (aliased c) for anything the keywords don’t cover.\n\nsource\n\nCollection.find_note_ids\ndef find_note_ids(\n    **kw\n):\nCall self as a function.\n\nsource\n\n\nCollection.find_notes\ndef find_notes(\n    deck:NoneType=None, tag:NoneType=None, added_days:NoneType=None, where:NoneType=None, args:tuple=(), **fields\n):\nNotes matching all given criteria; field kwargs are case-insensitive substring matches\n\ntest_eq(col.find_note_ids(deck='Spanish'), [n.id])\ntest_eq(col.find_note_ids(tag='greeting'), [n.id])\ntest_eq([x.id for x in col.find_notes(Front='HOLA')], [n.id])\ntest_eq(col.find_notes(Front='nope'), [])\ntest_eq(len(col.find_notes()), 2)\ntest_eq(col.find_note_ids(where='n.id=?', args=[cz.id]), [cz.id])\n\nCards get the same treatment. Card carries the scheduling columns; is_due selects learning cards whose time has come and review cards due today or earlier.\n\nsource\n\n\nCollection.find_card_ids\ndef find_card_ids(\n    **kw\n):\nCall self as a function.\n\nsource\n\n\nCollection.find_cards\ndef find_cards(\n    deck:NoneType=None, tag:NoneType=None, added_days:NoneType=None, is_due:NoneType=None, where:NoneType=None,\n    args:tuple=(), **fields\n):\nCards matching all given criteria (same keywords as find_notes, plus is_due)\n\nsource\n\n\nCollection.today\ndef today():\nDays since collection creation, Anki’s day counter\n\nsource\n\n\nCard\ndef Card(\n    id, nid, did, ord, mod, usn, type, queue, due, ivl\n):\nInitialize self. See help(type(self)) for accurate signature.\n\ncards = col.find_cards(deck='Spanish')\ntest_eq(len(cards), 1)\ncards[0]\n\n\nCard 1784759309663 (nid: 1784759309663, due: 1, ivl: 0d, queue: 0)\n\n\n\nNew cards aren’t “due” in Anki’s sense, and nothing has been studied in this collection, so:\n\ntest_eq(col.find_cards(is_due=True), [])\ntest_eq(len(col.find_card_ids()), 4)",
+    "crumbs": [
+      "Collections"
+    ]
+  },
+  {
+    "objectID": "collection.html#due-counts",
+    "href": "collection.html#due-counts",
+    "title": "Collections",
+    "section": "Due counts",
+    "text": "Due counts\n\nsource\n\nCollection.due_counts\ndef due_counts(\n    deck:NoneType=None\n):\n(new, learning, review) counts for deck and its subdecks (or the whole collection)\n\ntest_eq(col.due_counts(), (4,0,0))\ntest_eq(col.due_counts('Spanish'), (1,0,0))",
+    "crumbs": [
+      "Collections"
+    ]
+  },
+  {
+    "objectID": "collection.html#the-oracle-test",
+    "href": "collection.html#the-oracle-test",
+    "title": "Collections",
+    "section": "The oracle test",
+    "text": "The oracle test\nEverything above wrote rows we believe are Anki-compatible. Time to ask Anki: open the collection we’ve been mutating, run its database check, use its own search to find our notes, add a note of its own, and make sure we can read that back.\n\ncol.close()\nac = AnkiCollection(str(td/'collection.anki2'))\nreport, ok = ac.fix_integrity()\ntest_eq(ok, True)\n\n\ntest_eq(ac.find_notes('deck:Spanish::Vocab'), [n.id])\ntest_eq(ac.find_notes('tag:greeting'), [n.id])\ntest_eq(sorted(ac.find_notes('')), sorted([n.id, cz.id]))\nanote = ac.get_note(cz.id)\ntest_eq(anote['Text'], '{{c1::uno}} {{c2::dos}} {{c3::tres}}')\n\n\ntheirs = ac.new_note(ac.models.by_name('Basic'))\ntheirs['Front'] = 'from anki'\nac.add_note(theirs, 1)\nac.close()\ncol = Collection.open(td/'collection.anki2')\ntest_eq(col.find_note_ids(Front='from anki'), [theirs.id])\ncol.close()",
+    "crumbs": [
+      "Collections"
+    ]
+  }
+]

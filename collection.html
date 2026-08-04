@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Notes, cards, decks and search, straight to the sqlite file">
+
+<title>Collections – fastanki</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-2b6a17fde00b5ccb222bcc6fbf188e31.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="Collections – fastanki">
+<meta property="og:description" content="Notes, cards, decks and search, straight to the sqlite file">
+<meta property="og:site_name" content="fastanki">
+<meta name="twitter:title" content="Collections – fastanki">
+<meta name="twitter:description" content="Notes, cards, decks and search, straight to the sqlite file">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">fastanki</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./collection.html">Collections</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">fastanki</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./schema.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Collection files</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./collection.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Collections</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./syncer.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Syncing</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./core.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Core API</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./media.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Media</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#text-utilities" id="toc-text-utilities" class="nav-link active" data-scroll-target="#text-utilities">Text utilities</a>
+  <ul class="collapse">
+  <li><a href="#guid64" id="toc-guid64" class="nav-link" data-scroll-target="#guid64">guid64</a></li>
+  <li><a href="#field_csum" id="toc-field_csum" class="nav-link" data-scroll-target="#field_csum">field_csum</a></li>
+  <li><a href="#strip_html_media" id="toc-strip_html_media" class="nav-link" data-scroll-target="#strip_html_media">strip_html_media</a></li>
+  </ul></li>
+  <li><a href="#opening-a-collection" id="toc-opening-a-collection" class="nav-link" data-scroll-target="#opening-a-collection">Opening a collection</a>
+  <ul class="collapse">
+  <li><a href="#collection" id="toc-collection" class="nav-link" data-scroll-target="#collection">Collection</a></li>
+  <li><a href="#data_dir" id="toc-data_dir" class="nav-link" data-scroll-target="#data_dir">data_dir</a></li>
+  </ul></li>
+  <li><a href="#notetypes" id="toc-notetypes" class="nav-link" data-scroll-target="#notetypes">Notetypes</a>
+  <ul class="collapse">
+  <li><a href="#collection.notetypes" id="toc-collection.notetypes" class="nav-link" data-scroll-target="#collection.notetypes">Collection.notetypes</a></li>
+  <li><a href="#collection.nt" id="toc-collection.nt" class="nav-link" data-scroll-target="#collection.nt">Collection.nt</a></li>
+  <li><a href="#nt" id="toc-nt" class="nav-link" data-scroll-target="#nt">NT</a></li>
+  </ul></li>
+  <li><a href="#decks" id="toc-decks" class="nav-link" data-scroll-target="#decks">Decks</a>
+  <ul class="collapse">
+  <li><a href="#collection.decks" id="toc-collection.decks" class="nav-link" data-scroll-target="#collection.decks">Collection.decks</a></li>
+  <li><a href="#collection.deck_id" id="toc-collection.deck_id" class="nav-link" data-scroll-target="#collection.deck_id">Collection.deck_id</a></li>
+  </ul></li>
+  <li><a href="#adding-notes" id="toc-adding-notes" class="nav-link" data-scroll-target="#adding-notes">Adding notes</a>
+  <ul class="collapse">
+  <li><a href="#renders_with_fields" id="toc-renders_with_fields" class="nav-link" data-scroll-target="#renders_with_fields">renders_with_fields</a></li>
+  <li><a href="#field_is_empty" id="toc-field_is_empty" class="nav-link" data-scroll-target="#field_is_empty">field_is_empty</a></li>
+  <li><a href="#note_cards" id="toc-note_cards" class="nav-link" data-scroll-target="#note_cards">note_cards</a></li>
+  <li><a href="#note" id="toc-note" class="nav-link" data-scroll-target="#note">Note</a></li>
+  <li><a href="#collection.add" id="toc-collection.add" class="nav-link" data-scroll-target="#collection.add">Collection.add</a></li>
+  <li><a href="#collection.get_note" id="toc-collection.get_note" class="nav-link" data-scroll-target="#collection.get_note">Collection.get_note</a></li>
+  </ul></li>
+  <li><a href="#updating-and-removing" id="toc-updating-and-removing" class="nav-link" data-scroll-target="#updating-and-removing">Updating and removing</a>
+  <ul class="collapse">
+  <li><a href="#collection.update_note" id="toc-collection.update_note" class="nav-link" data-scroll-target="#collection.update_note">Collection.update_note</a></li>
+  <li><a href="#collection.remove_deck" id="toc-collection.remove_deck" class="nav-link" data-scroll-target="#collection.remove_deck">Collection.remove_deck</a></li>
+  <li><a href="#collection.remove_notes" id="toc-collection.remove_notes" class="nav-link" data-scroll-target="#collection.remove_notes">Collection.remove_notes</a></li>
+  </ul></li>
+  <li><a href="#finding" id="toc-finding" class="nav-link" data-scroll-target="#finding">Finding</a>
+  <ul class="collapse">
+  <li><a href="#collection.find_note_ids" id="toc-collection.find_note_ids" class="nav-link" data-scroll-target="#collection.find_note_ids">Collection.find_note_ids</a></li>
+  <li><a href="#collection.find_notes" id="toc-collection.find_notes" class="nav-link" data-scroll-target="#collection.find_notes">Collection.find_notes</a></li>
+  <li><a href="#collection.find_card_ids" id="toc-collection.find_card_ids" class="nav-link" data-scroll-target="#collection.find_card_ids">Collection.find_card_ids</a></li>
+  <li><a href="#collection.find_cards" id="toc-collection.find_cards" class="nav-link" data-scroll-target="#collection.find_cards">Collection.find_cards</a></li>
+  <li><a href="#collection.today" id="toc-collection.today" class="nav-link" data-scroll-target="#collection.today">Collection.today</a></li>
+  <li><a href="#card" id="toc-card" class="nav-link" data-scroll-target="#card">Card</a></li>
+  </ul></li>
+  <li><a href="#due-counts" id="toc-due-counts" class="nav-link" data-scroll-target="#due-counts">Due counts</a>
+  <ul class="collapse">
+  <li><a href="#collection.due_counts" id="toc-collection.due_counts" class="nav-link" data-scroll-target="#collection.due_counts">Collection.due_counts</a></li>
+  </ul></li>
+  <li><a href="#the-oracle-test" id="toc-the-oracle-test" class="nav-link" data-scroll-target="#the-oracle-test">The oracle test</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/AnswerDotAI/fastanki/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div><div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="collection.html.md"><i class="bi bi-file-code"></i>Markdown</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Collections</h1>
+</div>
+
+<div>
+  <div class="description">
+    Notes, cards, decks and search, straight to the sqlite file
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<p>With <code>fastanki.schema</code> handling the file format, this module does the actual work: a <a href="https://AnswerDotAI.github.io/fastanki/collection.html#collection"><code>Collection</code></a> class that adds, finds, updates and removes notes, generating cards the way Anki would. Every change is bookkept for sync (<code>usn=-1</code> marks pending rows, deletions go to <code>graves</code>, <code>col.mod</code> tracks modification time), so a collection managed here syncs cleanly with AnkiWeb and any other Anki client.</p>
+<div id="1c92170a" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tempfile</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> fastcore.test <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> anki.collection <span class="im">import</span> Collection <span class="im">as</span> AnkiCollection</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> anki.lang</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> anki.utils <span class="im">import</span> field_checksum <span class="im">as</span> anki_csum</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> unittest.mock <span class="im">import</span> patch <span class="im">as</span> mock_patch</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="text-utilities" class="level2">
+<h2 class="anchored" data-anchor-id="text-utilities">Text utilities</h2>
+<p>Anki fingerprints the first field of every note with a checksum used for duplicate detection, computed over the text with HTML stripped but media filenames kept (so <code>&lt;img src=cat.jpg&gt;</code> and a note that mentions cat.jpg collide, as they should). The guid identifies a note across collections, as 10 or so characters of base91.</p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L34" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="guid64" class="level3">
+<h3 class="anchored" data-anchor-id="guid64">guid64</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> guid64():</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>A new random note guid, in Anki’s base91 encoding</em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L28" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="field_csum" class="level3">
+<h3 class="anchored" data-anchor-id="field_csum">field_csum</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> field_csum(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    text:<span class="bu">str</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Anki’s dupe-detection checksum: first 4 bytes of the sha1 of the stripped first field</em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L22" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="strip_html_media" class="level3">
+<h3 class="anchored" data-anchor-id="strip_html_media">strip_html_media</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> strip_html_media(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    s:<span class="bu">str</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Strip HTML from <code>s</code>, preserving media filenames, matching Anki’s checksum preprocessing</em></p>
+<p>Checked directly against Anki’s own implementation, on plain text, HTML, entities, and media references:</p>
+<div id="1ee5c7cc" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>anki.lang.set_lang(<span class="st">'en'</span>)  <span class="co"># pylib's checksum helper strips HTML through a backend</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> s <span class="kw">in</span> [<span class="st">'hello'</span>, <span class="st">'dos'</span>, <span class="st">'&lt;b&gt;test&lt;/b&gt;'</span>, <span class="st">'a &amp;amp; b'</span>, <span class="st">'&lt;img src=cat.jpg&gt;'</span>, <span class="st">"&lt;img src='dog gif.gif'&gt;x"</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>          <span class="st">'[sound:beep.mp3]'</span>, <span class="st">'caf</span><span class="ch">\xe9</span><span class="st">&amp;nbsp;au lait'</span>, <span class="st">'&lt;style&gt;p </span><span class="sc">{}</span><span class="st">&lt;/style&gt;text'</span>]:</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    test_eq(field_csum(s), anki_csum(s))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="78ed1c85" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>test_eq(field_csum(<span class="st">'hello'</span>), <span class="dv">2868168221</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>g <span class="op">=</span> guid64()</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="dv">1</span> <span class="op">&lt;=</span> <span class="bu">len</span>(g) <span class="op">&lt;=</span> <span class="dv">11</span> <span class="kw">and</span> <span class="bu">set</span>(g) <span class="op">&lt;=</span> <span class="bu">set</span>(<span class="bu">map</span>(<span class="bu">chr</span>, _B91))</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>g</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>'_&gt;o$MB$jHA'</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="opening-a-collection" class="level2">
+<h2 class="anchored" data-anchor-id="opening-a-collection">Opening a collection</h2>
+<p>fastanki keeps its own collection, separate from any desktop Anki profile: on machines where fastanki runs there’s usually no desktop Anki at all, and where there is one, staying out of its data folder means never fighting it for the sqlite lock. The desktop sees our changes the same way your phone does, through AnkiWeb sync.</p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L47" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="collection" class="level3">
+<h3 class="anchored" data-anchor-id="collection">Collection</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> Collection(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    path</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Initialize self. See help(type(self)) for accurate signature.</em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L43" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="data_dir" class="level3">
+<h3 class="anchored" data-anchor-id="data_dir">data_dir</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> data_dir():</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>fastanki’s data folder (override with FASTANKI_DIR)</em></p>
+<p><code>q</code> and <code>q1</code> keep the sql one-liners readable throughout the rest of the module. <code>_dirty</code> bumps <code>col.mod</code>, which is how sync notices there’s something to send.</p>
+<div id="7f1cf656" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>td <span class="op">=</span> Path(tempfile.mkdtemp())</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>col <span class="op">=</span> Collection.<span class="bu">open</span>(td<span class="op">/</span><span class="st">'collection.anki2'</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>test_eq(col.q1(<span class="st">'select ver from col'</span>), <span class="dv">18</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="notetypes" class="level2">
+<h2 class="anchored" data-anchor-id="notetypes">Notetypes</h2>
+<p>A notetype’s structure spans three tables plus a protobuf config. <a href="https://AnswerDotAI.github.io/fastanki/collection.html#nt"><code>NT</code></a> gathers what note operations need: field names, sort field, kind, and the per-template card generation requirements.</p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L100" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="collection.notetypes" class="level3">
+<h3 class="anchored" data-anchor-id="collection.notetypes">Collection.notetypes</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> notetypes():</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Call self as a function.</em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L93" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="collection.nt" class="level3">
+<h3 class="anchored" data-anchor-id="collection.nt">Collection.nt</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> nt(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    name</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Notetype structure by name (case-insensitive)</em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L78" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="nt" class="level3">
+<h3 class="anchored" data-anchor-id="nt">NT</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> NT(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    con, ntid, name</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>A notetype’s structure: fields, templates, and card generation rules</em></p>
+<div id="cd63e672" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>col.nt(<span class="st">'Basic'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>NT('Basic', flds=['Front', 'Back'], 1 templates)</code></pre>
+</div>
+</div>
+<p>The <code>name=?</code> lookup goes through sqlite’s <a href="https://AnswerDotAI.github.io/fastanki/schema.html#unicase"><code>unicase</code></a> collation on the name column, so <code>col.nt('basic')</code> finds Basic:</p>
+<div id="14244058" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>test_eq(col.nt(<span class="st">'basic'</span>).<span class="bu">id</span>, col.nt(<span class="st">'Basic'</span>).<span class="bu">id</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>test_eq(col.notetypes(), [<span class="st">'Basic'</span>,<span class="st">'Cloze'</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="decks" class="level2">
+<h2 class="anchored" data-anchor-id="decks">Decks</h2>
+<p>Deck names nest with <code>::</code> in Anki’s UI, but the table stores the separator as <code>\x1f</code>, one row per level. Adding <code>Spanish::Vocab</code> creates <code>Spanish</code> too, as Anki does.</p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L120" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="collection.decks" class="level3">
+<h3 class="anchored" data-anchor-id="collection.decks">Collection.decks</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> decks():</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Call self as a function.</em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L106" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="collection.deck_id" class="level3">
+<h3 class="anchored" data-anchor-id="collection.deck_id">Collection.deck_id</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> deck_id(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    name, create:<span class="bu">bool</span><span class="op">=</span><span class="va">False</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Id of deck <code>name</code> (<code>::</code>-separated), optionally creating it (and any missing parents)</em></p>
+<div id="ec826862" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>did <span class="op">=</span> col.deck_id(<span class="st">'Spanish::Vocab'</span>, create<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>test_eq(col.decks(), [<span class="st">'Default'</span>,<span class="st">'Spanish'</span>,<span class="st">'Spanish::Vocab'</span>])</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>test_eq(col.deck_id(<span class="st">'Spanish::Vocab'</span>), did)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>test_is(col.deck_id(<span class="st">'Nope'</span>), <span class="va">None</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="adding-notes" class="level2">
+<h2 class="anchored" data-anchor-id="adding-notes">Adding notes</h2>
+<p><a href="https://AnswerDotAI.github.io/fastanki/collection.html#note"><code>Note</code></a> is a plain holder for one row of the <code>notes</code> table, with dict-style field access by name. The interesting work is in <code>add_note</code>: joining fields with <code>\x1f</code>, computing <code>sfld</code> and <code>csum</code>, and deciding which cards to generate. For normal notetypes each template carries a requirement (“any of these fields non-empty” or “all of them”); for cloze notetypes there’s one card per distinct <code>{c1::...}</code> number across the fields.</p>
+<p>Card generation follows Anki’s rule rather than the stored <code>req</code> cache: a normal template generates a card when its <strong>front</strong> would render non-empty for the note’s non-empty fields. <a href="https://AnswerDotAI.github.io/fastanki/collection.html#renders_with_fields"><code>renders_with_fields</code></a> parses the front template (<code>{Field}</code>, <code>{#Field}…{{/Field}}</code>, <code>{^Field}…{{/Field}}</code>, comments) and reports whether any non-empty field reaches the output; static text alone never counts. <a href="https://AnswerDotAI.github.io/fastanki/collection.html#field_is_empty"><code>field_is_empty</code></a> matches Anki: whitespace and empty <code>&lt;br&gt;</code>/<code>&lt;div&gt;</code> tags only.</p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L158" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="renders_with_fields" class="level3">
+<h3 class="anchored" data-anchor-id="renders_with_fields">renders_with_fields</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> renders_with_fields(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    qfmt, nonempty</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Would front template <code>qfmt</code> render non-empty given the set of <code>nonempty</code> field names?</em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L124" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="field_is_empty" class="level3">
+<h3 class="anchored" data-anchor-id="field_is_empty">field_is_empty</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> field_is_empty(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    s</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Call self as a function.</em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L182" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="note_cards" class="level3">
+<h3 class="anchored" data-anchor-id="note_cards">note_cards</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> note_cards(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    nt, fields, tags:<span class="bu">tuple</span><span class="op">=</span>()</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Template ordinals that generate cards for a note’s <code>fields</code> (values in field order) and <code>tags</code>, using Anki’s render rule</em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L163" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="note" class="level3">
+<h3 class="anchored" data-anchor-id="note">Note</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> Note(</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>, guid, mid, mod, usn, tags, flds, nt</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Initialize self. See help(type(self)) for accurate signature.</em></p>
+<p>Cloze ordinals are 1-based in note text (<code>{c1::...}</code>) but 0-based as card <code>ord</code>s, so <a href="https://AnswerDotAI.github.io/fastanki/collection.html#note_cards"><code>note_cards</code></a> returns them shifted. <code>KIND_NONE</code> (0) requirements mean the template never generates; <code>any</code> is 1 and <code>all</code> is 2 in the protobuf enum.</p>
+<div id="a0d517de" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>bnt <span class="op">=</span> col.nt(<span class="st">'Basic'</span>)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>test_eq(note_cards(bnt, [<span class="st">'hi'</span>,<span class="st">''</span>]), [<span class="dv">0</span>])</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>test_eq(note_cards(bnt, [<span class="st">''</span>,<span class="st">'back only'</span>]), [])</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>cnt <span class="op">=</span> col.nt(<span class="st">'Cloze'</span>)</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>test_eq(note_cards(cnt, [<span class="st">'</span><span class="sc">{{</span><span class="st">c1::a</span><span class="sc">}}</span><span class="st"> and </span><span class="sc">{{</span><span class="st">c3::b</span><span class="sc">}}</span><span class="st">'</span>,<span class="st">''</span>]), [<span class="dv">0</span>,<span class="dv">2</span>])</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>test_eq(note_cards(cnt, [<span class="st">'no clozes here'</span>,<span class="st">''</span>]), [])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>And the render rule agrees with Anki itself across the reversed and optional-reversed (conditional <code>{#Add Reverse}</code>) notetypes: Anki generates the cards, and <a href="https://AnswerDotAI.github.io/fastanki/collection.html#note_cards"><code>note_cards</code></a> predicts the same ordinals from the note’s fields.</p>
+<div id="24597ed0" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>gp <span class="op">=</span> Path(tempfile.mkdtemp())<span class="op">/</span><span class="st">'gen.anki2'</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>aoc <span class="op">=</span> AnkiCollection(<span class="bu">str</span>(gp))</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>want <span class="op">=</span> []</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> mname, flds <span class="kw">in</span> [(<span class="st">'Basic (and reversed card)'</span>, <span class="bu">dict</span>(Front<span class="op">=</span><span class="st">'q'</span>, Back<span class="op">=</span><span class="st">'a'</span>)),</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>                    (<span class="st">'Basic (and reversed card)'</span>, <span class="bu">dict</span>(Front<span class="op">=</span><span class="st">'q'</span>, Back<span class="op">=</span><span class="st">''</span>)),</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>                    (<span class="st">'Basic (optional reversed card)'</span>, <span class="bu">dict</span>(Front<span class="op">=</span><span class="st">'q'</span>, Back<span class="op">=</span><span class="st">'a'</span>)),</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>                    (<span class="st">'Basic (optional reversed card)'</span>, <span class="bu">dict</span>(Front<span class="op">=</span><span class="st">'q'</span>, Back<span class="op">=</span><span class="st">'a'</span>, <span class="op">**</span>{<span class="st">'Add Reverse'</span>:<span class="st">'y'</span>}))]:</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> aoc.new_note(aoc.models.by_name(mname))</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k,v <span class="kw">in</span> flds.items(): n[k] <span class="op">=</span> v</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>    aoc.add_note(n, <span class="dv">1</span>)</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>    want.append((mname, flds, <span class="bu">sorted</span>(c.<span class="bu">ord</span> <span class="cf">for</span> c <span class="kw">in</span> n.cards())))</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>aoc.close()</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>fc <span class="op">=</span> Collection(gp)</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> mname, flds, ords <span class="kw">in</span> want: test_eq(note_cards(fc.nt(mname), [flds.get(f,<span class="st">''</span>) <span class="cf">for</span> f <span class="kw">in</span> fc.nt(mname).flds]), ords)</span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>fc.close()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Now <code>add</code> itself. Anki assigns each new card a position (<code>due</code> for a new card is its queue position, not a date), drawn from the <code>nextPos</code> counter:</p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L198" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="collection.add" class="level3">
+<h3 class="anchored" data-anchor-id="collection.add">Collection.add</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> add(</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    model:<span class="bu">str</span><span class="op">=</span><span class="st">'Basic'</span>, deck:<span class="bu">str</span><span class="op">=</span><span class="st">'Default'</span>, tags:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>fields</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Add a note (and its cards), returning the <a href="https://AnswerDotAI.github.io/fastanki/collection.html#note"><code>Note</code></a></em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L222" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="collection.get_note" class="level3">
+<h3 class="anchored" data-anchor-id="collection.get_note">Collection.get_note</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_note(</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    nid</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Retrieve a <a href="https://AnswerDotAI.github.io/fastanki/collection.html#note"><code>Note</code></a> by id</em></p>
+<div id="f9e3c9f8" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> col.add(Front<span class="op">=</span><span class="st">'hola'</span>, Back<span class="op">=</span><span class="st">'hello'</span>, deck<span class="op">=</span><span class="st">'Spanish::Vocab'</span>, tags<span class="op">=</span><span class="st">'spanish'</span>)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>n</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<div class="prose" data-markdown="1">
+<p><strong>Front</strong>: hola | <strong>Back</strong>: hello | 🏷 spanish</p>
+</div>
+</div>
+</div>
+<div id="21b5dc87" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>test_eq(n[<span class="st">'Front'</span>], <span class="st">'hola'</span>)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>test_eq(n.tags, [<span class="st">'spanish'</span>])</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>test_eq(col.q1(<span class="st">'select count(*) from cards where nid=?'</span>, n.<span class="bu">id</span>), <span class="dv">1</span>)</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>test_eq(col.q1(<span class="st">'select due from cards where nid=?'</span>, n.<span class="bu">id</span>), <span class="dv">1</span>)</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>cz <span class="op">=</span> col.add(model<span class="op">=</span><span class="st">'Cloze'</span>, Text<span class="op">=</span><span class="st">'</span><span class="sc">{{</span><span class="st">c1::uno</span><span class="sc">}}</span><span class="st"> y </span><span class="sc">{{</span><span class="st">c2::dos</span><span class="sc">}}</span><span class="st">'</span>)</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>test_eq(col.q(<span class="st">'select ord, due from cards where nid=? order by ord'</span>, cz.<span class="bu">id</span>), [(<span class="dv">0</span>,<span class="dv">2</span>),(<span class="dv">1</span>,<span class="dv">3</span>)])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="updating-and-removing" class="level2">
+<h2 class="anchored" data-anchor-id="updating-and-removing">Updating and removing</h2>
+<p>Updates rewrite the note row with fresh <code>mod</code>, <code>usn=-1</code>, <code>sfld</code> and <code>csum</code>, and generate any cards a new cloze number now requires (never deleting existing ones, matching Anki). Removals record graves, the tombstones sync uses to propagate deletions: type 0 is a card, 1 a note, 2 a deck.</p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L231" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="collection.update_note" class="level3">
+<h3 class="anchored" data-anchor-id="collection.update_note">Collection.update_note</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> update_note(</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    note, tags:NoneType<span class="op">=</span><span class="va">None</span>, add_tags:NoneType<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>fields</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Update fields and/or tags of <code>note</code> (a <a href="https://AnswerDotAI.github.io/fastanki/collection.html#note"><code>Note</code></a> or note id), returning the updated <a href="https://AnswerDotAI.github.io/fastanki/collection.html#note"><code>Note</code></a></em></p>
+<div id="58515ca6" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>n2 <span class="op">=</span> col.update_note(n, Back<span class="op">=</span><span class="st">'hello!'</span>, add_tags<span class="op">=</span><span class="st">'greeting'</span>)</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>test_eq(n2[<span class="st">'Back'</span>], <span class="st">'hello!'</span>)</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>test_eq(n2.tags, [<span class="st">'spanish'</span>,<span class="st">'greeting'</span>])</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>cz2 <span class="op">=</span> col.update_note(cz.<span class="bu">id</span>, Text<span class="op">=</span><span class="st">'</span><span class="sc">{{</span><span class="st">c1::uno</span><span class="sc">}}</span><span class="st"> </span><span class="sc">{{</span><span class="st">c2::dos</span><span class="sc">}}</span><span class="st"> </span><span class="sc">{{</span><span class="st">c3::tres</span><span class="sc">}}</span><span class="st">'</span>)</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>test_eq(col.q1(<span class="st">'select count(*) from cards where nid=?'</span>, cz.<span class="bu">id</span>), <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L267" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="collection.remove_deck" class="level3">
+<h3 class="anchored" data-anchor-id="collection.remove_deck">Collection.remove_deck</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> remove_deck(</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>    name</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Remove deck <code>name</code> and its subdecks, with their cards and notes</em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L253" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="collection.remove_notes" class="level3">
+<h3 class="anchored" data-anchor-id="collection.remove_notes">Collection.remove_notes</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> remove_notes(</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>    nids</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Remove notes (and their cards) by id, recording graves for sync</em></p>
+<p>Anki’s “remove deck” takes the notes down with it when their cards all lived there; we do the simpler, stricter thing and remove every note that had a card in the deck. The functional API only exposes deck removal through <a href="https://AnswerDotAI.github.io/fastanki/collection.html#collection"><code>Collection</code></a>, so surprises stay contained.</p>
+<div id="9ff347c7" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>col.add(Front<span class="op">=</span><span class="st">'bye'</span>, deck<span class="op">=</span><span class="st">'Doomed'</span>)</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>test_eq(col.remove_deck(<span class="st">'Doomed'</span>), <span class="dv">1</span>)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>test_is(col.deck_id(<span class="st">'Doomed'</span>), <span class="va">None</span>)</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>test_eq(col.q1(<span class="st">"select count(*) from notes where flds like 'bye%'"</span>), <span class="dv">0</span>)</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>test_eq(col.q1(<span class="st">"select count(*) from graves where type=2"</span>), <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="finding" class="level2">
+<h2 class="anchored" data-anchor-id="finding">Finding</h2>
+<p>Anki has a search language; we have Python. Keyword arguments compose to SQL: <code>deck</code>, <code>tag</code> and <code>added_days</code> map to indexed columns, any other keyword is treated as a field name and matched case-insensitively as a substring, and <code>where</code>/<code>args</code> drop through to raw SQL against the <code>notes</code> table (aliased <code>n</code>) joined with <code>cards</code> (aliased <code>c</code>) for anything the keywords don’t cover.</p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L311" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="collection.find_note_ids" class="level3">
+<h3 class="anchored" data-anchor-id="collection.find_note_ids">Collection.find_note_ids</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_note_ids(</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kw</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Call self as a function.</em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L299" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="collection.find_notes" class="level3">
+<h3 class="anchored" data-anchor-id="collection.find_notes">Collection.find_notes</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_notes(</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>    deck:NoneType<span class="op">=</span><span class="va">None</span>, tag:NoneType<span class="op">=</span><span class="va">None</span>, added_days:NoneType<span class="op">=</span><span class="va">None</span>, where:NoneType<span class="op">=</span><span class="va">None</span>, args:<span class="bu">tuple</span><span class="op">=</span>(), <span class="op">**</span>fields</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Notes matching all given criteria; field kwargs are case-insensitive substring matches</em></p>
+<div id="0ea9e800" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>test_eq(col.find_note_ids(deck<span class="op">=</span><span class="st">'Spanish'</span>), [n.<span class="bu">id</span>])</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>test_eq(col.find_note_ids(tag<span class="op">=</span><span class="st">'greeting'</span>), [n.<span class="bu">id</span>])</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>test_eq([x.<span class="bu">id</span> <span class="cf">for</span> x <span class="kw">in</span> col.find_notes(Front<span class="op">=</span><span class="st">'HOLA'</span>)], [n.<span class="bu">id</span>])</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>test_eq(col.find_notes(Front<span class="op">=</span><span class="st">'nope'</span>), [])</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>test_eq(<span class="bu">len</span>(col.find_notes()), <span class="dv">2</span>)</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>test_eq(col.find_note_ids(where<span class="op">=</span><span class="st">'n.id=?'</span>, args<span class="op">=</span>[cz.<span class="bu">id</span>]), [cz.<span class="bu">id</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Cards get the same treatment. <a href="https://AnswerDotAI.github.io/fastanki/collection.html#card"><code>Card</code></a> carries the scheduling columns; <code>is_due</code> selects learning cards whose time has come and review cards due today or earlier.</p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L335" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="collection.find_card_ids" class="level3">
+<h3 class="anchored" data-anchor-id="collection.find_card_ids">Collection.find_card_ids</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_card_ids(</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kw</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Call self as a function.</em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L325" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="collection.find_cards" class="level3">
+<h3 class="anchored" data-anchor-id="collection.find_cards">Collection.find_cards</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> find_cards(</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>    deck:NoneType<span class="op">=</span><span class="va">None</span>, tag:NoneType<span class="op">=</span><span class="va">None</span>, added_days:NoneType<span class="op">=</span><span class="va">None</span>, is_due:NoneType<span class="op">=</span><span class="va">None</span>, where:NoneType<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>    args:<span class="bu">tuple</span><span class="op">=</span>(), <span class="op">**</span>fields</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Cards matching all given criteria (same keywords as <a href="https://AnswerDotAI.github.io/fastanki/core.html#find_notes"><code>find_notes</code></a>, plus <code>is_due</code>)</em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L320" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="collection.today" class="level3">
+<h3 class="anchored" data-anchor-id="collection.today">Collection.today</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> today():</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Days since collection creation, Anki’s day counter</em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L314" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="card" class="level3">
+<h3 class="anchored" data-anchor-id="card">Card</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> Card(</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">id</span>, nid, did, <span class="bu">ord</span>, mod, usn, <span class="bu">type</span>, queue, due, ivl</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Initialize self. See help(type(self)) for accurate signature.</em></p>
+<div id="5ccc573c" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>cards <span class="op">=</span> col.find_cards(deck<span class="op">=</span><span class="st">'Spanish'</span>)</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>test_eq(<span class="bu">len</span>(cards), <span class="dv">1</span>)</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>cards[<span class="dv">0</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<div class="prose" data-markdown="1">
+<p>Card 1784759309663 (nid: 1784759309663, due: 1, ivl: 0d, queue: 0)</p>
+</div>
+</div>
+</div>
+<p>New cards aren’t “due” in Anki’s sense, and nothing has been studied in this collection, so:</p>
+<div id="27872a2b" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>test_eq(col.find_cards(is_due<span class="op">=</span><span class="va">True</span>), [])</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>test_eq(<span class="bu">len</span>(col.find_card_ids()), <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="due-counts" class="level2">
+<h2 class="anchored" data-anchor-id="due-counts">Due counts</h2>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/collection.py#L339" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="collection.due_counts" class="level3">
+<h3 class="anchored" data-anchor-id="collection.due_counts">Collection.due_counts</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> due_counts(</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>    deck:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>(new, learning, review) counts for <code>deck</code> and its subdecks (or the whole collection)</em></p>
+<div id="6f99c36f" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>test_eq(col.due_counts(), (<span class="dv">4</span>,<span class="dv">0</span>,<span class="dv">0</span>))</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>test_eq(col.due_counts(<span class="st">'Spanish'</span>), (<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">0</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="the-oracle-test" class="level2">
+<h2 class="anchored" data-anchor-id="the-oracle-test">The oracle test</h2>
+<p>Everything above wrote rows we believe are Anki-compatible. Time to ask Anki: open the collection we’ve been mutating, run its database check, use its own search to find our notes, add a note of its own, and make sure we can read that back.</p>
+<div id="23d64723" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>col.close()</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>ac <span class="op">=</span> AnkiCollection(<span class="bu">str</span>(td<span class="op">/</span><span class="st">'collection.anki2'</span>))</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>report, ok <span class="op">=</span> ac.fix_integrity()</span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>test_eq(ok, <span class="va">True</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="6ed38d1e" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>test_eq(ac.find_notes(<span class="st">'deck:Spanish::Vocab'</span>), [n.<span class="bu">id</span>])</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>test_eq(ac.find_notes(<span class="st">'tag:greeting'</span>), [n.<span class="bu">id</span>])</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>test_eq(<span class="bu">sorted</span>(ac.find_notes(<span class="st">''</span>)), <span class="bu">sorted</span>([n.<span class="bu">id</span>, cz.<span class="bu">id</span>]))</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>anote <span class="op">=</span> ac.get_note(cz.<span class="bu">id</span>)</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>test_eq(anote[<span class="st">'Text'</span>], <span class="st">'</span><span class="sc">{{</span><span class="st">c1::uno</span><span class="sc">}}</span><span class="st"> </span><span class="sc">{{</span><span class="st">c2::dos</span><span class="sc">}}</span><span class="st"> </span><span class="sc">{{</span><span class="st">c3::tres</span><span class="sc">}}</span><span class="st">'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="6d9e8799" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>theirs <span class="op">=</span> ac.new_note(ac.models.by_name(<span class="st">'Basic'</span>))</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>theirs[<span class="st">'Front'</span>] <span class="op">=</span> <span class="st">'from anki'</span></span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>ac.add_note(theirs, <span class="dv">1</span>)</span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>ac.close()</span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>col <span class="op">=</span> Collection.<span class="bu">open</span>(td<span class="op">/</span><span class="st">'collection.anki2'</span>)</span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>test_eq(col.find_note_ids(Front<span class="op">=</span><span class="st">'from anki'</span>), [theirs.<span class="bu">id</span>])</span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>col.close()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/AnswerDotAI\.github\.io\/fastanki");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/AnswerDotAI/fastanki/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>

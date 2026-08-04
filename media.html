@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Media files and the AnkiWeb media sync protocol">
+
+<title>Media – fastanki</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-2b6a17fde00b5ccb222bcc6fbf188e31.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+<meta property="og:title" content="Media – fastanki">
+<meta property="og:description" content="Media files and the AnkiWeb media sync protocol">
+<meta property="og:image" content="https://AnswerDotAI.github.io/fastanki/diagram.png">
+<meta property="og:site_name" content="fastanki">
+<meta name="twitter:title" content="Media – fastanki">
+<meta name="twitter:description" content="Media files and the AnkiWeb media sync protocol">
+<meta name="twitter:image" content="https://AnswerDotAI.github.io/fastanki/diagram.png">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar floating nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">fastanki</span>
+    </a>
+  </div>
+        <div class="quarto-navbar-tools tools-end">
+</div>
+          <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./media.html">Media</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">fastanki</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./schema.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Collection files</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./collection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Collections</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./syncer.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Syncing</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./core.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Core API</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./media.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Media</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#filenames" id="toc-filenames" class="nav-link active" data-scroll-target="#filenames">Filenames</a>
+  <ul class="collapse">
+  <li><a href="#norm_fname" id="toc-norm_fname" class="nav-link" data-scroll-target="#norm_fname">norm_fname</a></li>
+  </ul></li>
+  <li><a href="#adding-files" id="toc-adding-files" class="nav-link" data-scroll-target="#adding-files">Adding files</a>
+  <ul class="collapse">
+  <li><a href="#add_media_file" id="toc-add_media_file" class="nav-link" data-scroll-target="#add_media_file">add_media_file</a></li>
+  </ul></li>
+  <li><a href="#the-media-database" id="toc-the-media-database" class="nav-link" data-scroll-target="#the-media-database">The media database</a>
+  <ul class="collapse">
+  <li><a href="#media" id="toc-media" class="nav-link" data-scroll-target="#media">Media</a></li>
+  </ul></li>
+  <li><a href="#change-tracking" id="toc-change-tracking" class="nav-link" data-scroll-target="#change-tracking">Change tracking</a></li>
+  <li><a href="#zips-on-the-wire" id="toc-zips-on-the-wire" class="nav-link" data-scroll-target="#zips-on-the-wire">Zips on the wire</a></li>
+  <li><a href="#talking-to-the-server" id="toc-talking-to-the-server" class="nav-link" data-scroll-target="#talking-to-the-server">Talking to the server</a>
+  <ul class="collapse">
+  <li><a href="#mediasanityfailed" id="toc-mediasanityfailed" class="nav-link" data-scroll-target="#mediasanityfailed">MediaSanityFailed</a></li>
+  </ul></li>
+  <li><a href="#deciding-what-to-do-with-a-server-change" id="toc-deciding-what-to-do-with-a-server-change" class="nav-link" data-scroll-target="#deciding-what-to-do-with-a-server-change">Deciding what to do with a server change</a>
+  <ul class="collapse">
+  <li><a href="#required_change" id="toc-required_change" class="nav-link" data-scroll-target="#required_change">required_change</a></li>
+  </ul></li>
+  <li><a href="#files-in-and-out" id="toc-files-in-and-out" class="nav-link" data-scroll-target="#files-in-and-out">Files in and out</a></li>
+  <li><a href="#the-sync-procedure" id="toc-the-sync-procedure" class="nav-link" data-scroll-target="#the-sync-procedure">The sync procedure</a>
+  <ul class="collapse">
+  <li><a href="#media.sync" id="toc-media.sync" class="nav-link" data-scroll-target="#media.sync">Media.sync</a></li>
+  </ul></li>
+  <li><a href="#media-on-a-collection" id="toc-media-on-a-collection" class="nav-link" data-scroll-target="#media-on-a-collection">Media on a Collection</a>
+  <ul class="collapse">
+  <li><a href="#collection.sync_media" id="toc-collection.sync_media" class="nav-link" data-scroll-target="#collection.sync_media">Collection.sync_media</a></li>
+  <li><a href="#collection.add_media" id="toc-collection.add_media" class="nav-link" data-scroll-target="#collection.add_media">Collection.add_media</a></li>
+  <li><a href="#collection.media" id="toc-collection.media" class="nav-link" data-scroll-target="#collection.media">Collection.media</a></li>
+  </ul></li>
+  <li><a href="#against-a-real-server" id="toc-against-a-real-server" class="nav-link" data-scroll-target="#against-a-real-server">Against a real server</a></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/AnswerDotAI/fastanki/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div><div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="media.html.md"><i class="bi bi-file-code"></i>Markdown</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Media</h1>
+</div>
+
+<div>
+  <div class="description">
+    Media files and the AnkiWeb media sync protocol
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<p>Media sync is a protocol of its own, independent of collection sync: collection sync moves note and card rows, media sync moves files, and neither orders the other. It has its own usn sequence and no full-sync path, so every media sync is incremental. Local state is a media folder next to the collection plus a small sqlite db with one row per file; the folder is the truth, and a scan before each sync brings the db up to date. Like the rest of fastanki this was built against Anki’s Rust code (<code>rslib/src/sync/media/</code>) as the reference, and is tested against a real Anki server below with Anki itself as the second client.</p>
+<div id="1f001742" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> tempfile</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> fastcore.test <span class="im">import</span> <span class="op">*</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> anki.collection <span class="im">import</span> Collection <span class="im">as</span> AnkiCollection</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> anki.utils <span class="im">import</span> checksum</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="filenames" class="level2">
+<h2 class="anchored" data-anchor-id="filenames">Filenames</h2>
+<p>A media file’s name is its identity across devices, so Anki normalizes names aggressively before they may sync: NFC form (APFS stores and serves NFD), characters that break some platform stripped, Windows device names defused, no trailing dot or space, 120 bytes at most. A file whose name can’t survive this round trip is skipped by sync rather than mangled.</p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/media.py#L37" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="norm_fname" class="level3">
+<h3 class="anchored" data-anchor-id="norm_fname">norm_fname</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> norm_fname(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    fname</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Normalize a media filename as Anki does: NFC, problem characters stripped, device names defused, 120 bytes max</em></p>
+<p>The awkward cases are pinned by Anki’s own test suite (<code>files.rs</code>); we also push names through the oracle’s <code>write_data</code>, which runs the genuine Rust normalization, and check we picked the same name:</p>
+<div id="5d8e9b40" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>test_eq(norm_fname(<span class="st">'foo.jpg'</span>), <span class="st">'foo.jpg'</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>test_eq(norm_fname(<span class="st">'con.jpg[]&gt;&lt;:"/?*^</span><span class="ch">\\</span><span class="st">|</span><span class="ch">\0\r\n</span><span class="st">'</span>), <span class="st">'con_.jpg'</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>test_eq(norm_fname(<span class="st">'test.'</span>), <span class="st">'test._'</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>test_eq(norm_fname(<span class="st">'test '</span>), <span class="st">'test _'</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>test_eq(norm_fname(<span class="st">'x'</span><span class="op">*</span><span class="dv">130</span><span class="op">+</span><span class="st">'.jpg'</span>), <span class="st">'x'</span><span class="op">*</span><span class="dv">115</span><span class="op">+</span><span class="st">'.jpg'</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>td <span class="op">=</span> Path(tempfile.mkdtemp())</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>ac <span class="op">=</span> AnkiCollection(<span class="bu">str</span>(td<span class="op">/</span><span class="st">'oracle.anki2'</span>))</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>names <span class="op">=</span> [<span class="st">'ok.jpg'</span>, <span class="st">'con.'</span>, <span class="st">'foo bar.png'</span>, <span class="st">'te</span><span class="ch">\u0301</span><span class="st">st.gif'</span>, <span class="st">'x'</span><span class="op">*</span><span class="dv">130</span><span class="op">+</span><span class="st">'.webp'</span>]   <span class="co"># NFD input comes back NFC</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name <span class="kw">in</span> names: test_eq(ac.media.write_data(name, <span class="st">b'data'</span>), norm_fname(name))</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>[(name, norm_fname(name)) <span class="cf">for</span> name <span class="kw">in</span> names[:<span class="dv">4</span>]]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>[('ok.jpg', 'ok.jpg'),
+ ('con.', 'con_._'),
+ ('foo bar.png', 'foo bar.png'),
+ ('tést.gif', 'tést.gif')]</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="adding-files" class="level2">
+<h2 class="anchored" data-anchor-id="adding-files">Adding files</h2>
+<p>Adding a file whose name is taken must never silently clobber different content, because after a sync every device would see the change. So an add is content-aware: same name and same bytes is a no-op, while same name and different bytes stores the data under <code>name-{sha1}.ext</code> instead. Case-insensitive filesystems make <code>Foo.jpg</code> and <code>foo.jpg</code> the same file, so when the name is uppercase and can’t be used as-is, Anki retries with the lowercased name before falling back to the hash rename - which means a fresh uppercase name is stored lowercased.</p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/media.py#L56" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="add_media_file" class="level3">
+<h3 class="anchored" data-anchor-id="add_media_file">add_media_file</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> add_media_file(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    folder, data, fname</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Write <code>data</code> into <code>folder</code> under (normalized) <code>fname</code> without clobbering different content; returns the name used</em></p>
+<p>The oracle shows every branch, and we behave identically (note the platform wrinkle in the middle: on a case-insensitive filesystem, an existing <code>foo.jpg</code> satisfies the same-content check for <code>Foo.jpg</code>, so the name comes back with its case preserved):</p>
+<div id="b58def32" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>mf <span class="op">=</span> td<span class="op">/</span><span class="st">'add'</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>cases <span class="op">=</span> [(<span class="st">'Foo.jpg'</span>, <span class="st">b'aaa'</span>), (<span class="st">'Foo.jpg'</span>, <span class="st">b'aaa'</span>), (<span class="st">'Foo.jpg'</span>, <span class="st">b'bbb'</span>), (<span class="st">'dup.png'</span>, <span class="st">b'x'</span>), (<span class="st">'dup.png'</span>, <span class="st">b'y'</span>)]</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>theirs <span class="op">=</span> [ac.media.write_data(n, d) <span class="cf">for</span> n,d <span class="kw">in</span> cases]</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>ours <span class="op">=</span> [add_media_file(mf, d, n) <span class="cf">for</span> n,d <span class="kw">in</span> cases]</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>test_eq(ours, theirs)                              <span class="co"># we make exactly the oracle's choices, branch by branch</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>test_eq(_sha1(<span class="st">b'aaa'</span>), checksum(<span class="st">b'aaa'</span>))           <span class="co"># and our checksums are Anki's: hex sha1</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>test_eq(theirs[<span class="dv">0</span>], <span class="st">'foo.jpg'</span>)                      <span class="co"># fresh uppercase is stored lowercased</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>test_eq(theirs[<span class="dv">2</span>], <span class="ss">f'foo-</span><span class="sc">{</span>_sha1(<span class="st">b"bbb"</span>)<span class="sc">}</span><span class="ss">.jpg'</span>)     <span class="co"># same name, different content: hash-renamed</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>test_eq(theirs[<span class="dv">3</span>:], [<span class="st">'dup.png'</span>, <span class="ss">f'dup-</span><span class="sc">{</span>_sha1(<span class="st">b"y"</span>)<span class="sc">}</span><span class="ss">.png'</span>])</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>ours</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>['foo.jpg',
+ 'Foo.jpg',
+ 'foo-5cb138284d431abd6a053a56625ec088bfb88912.jpg',
+ 'dup.png',
+ 'dup-95cb0bfd2977c761298d9624e4b4d4c72a39974a.png']</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="the-media-database" class="level2">
+<h2 class="anchored" data-anchor-id="the-media-database">The media database</h2>
+<p>Sync state lives in a sqlite db of two tiny tables: one row per file (<code>csum</code> NULL means “deleted, deletion not yet uploaded”; <code>dirty</code> means “changed since last sync”), and a <code>meta</code> row holding the media folder’s last-seen mtime plus the last server usn we’ve caught up to. The layout matches Anki’s own: for <code>collection.anki2</code>, the folder is <code>collection.media</code> and the db <code>collection.mdb</code>, the same names the desktop app would pick.</p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/media.py#L82" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="media" class="level3">
+<h3 class="anchored" data-anchor-id="media">Media</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> Media(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    folder, db_path</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>A collection’s media folder plus the db tracking its sync state</em></p>
+<div id="61004b65" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>m <span class="op">=</span> Media(td<span class="op">/</span><span class="st">'m'</span><span class="op">/</span><span class="st">'media'</span>, td<span class="op">/</span><span class="st">'m'</span><span class="op">/</span><span class="st">'collection.mdb'</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>test_eq(m.count(), <span class="dv">0</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>test_is(m.entry(<span class="st">'test.mp3'</span>), <span class="va">None</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>m.set_entry(<span class="st">'test.mp3'</span>, <span class="va">None</span>, <span class="dv">0</span>, <span class="va">False</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>test_eq(m.entry(<span class="st">'test.mp3'</span>), (<span class="va">None</span>, <span class="dv">0</span>, <span class="dv">0</span>))</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>m.set_entry(<span class="st">'test.mp3'</span>, _sha1(<span class="st">b'hello'</span>), <span class="dv">123</span>, <span class="va">True</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>test_eq(m.pending(<span class="dv">25</span>), [(<span class="st">'test.mp3'</span>, _sha1(<span class="st">b'hello'</span>), <span class="dv">123</span>)])</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>test_eq(m.count(), <span class="dv">1</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>m.set_meta(<span class="dv">123</span>, <span class="dv">321</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>test_eq(m.meta(), (<span class="dv">123</span>, <span class="dv">321</span>))</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>m.force_resync()</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>test_eq((m.count(), m.meta()), (<span class="dv">0</span>, (<span class="dv">0</span>, <span class="dv">0</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="change-tracking" class="level2">
+<h2 class="anchored" data-anchor-id="change-tracking">Change tracking</h2>
+<p>The media folder is the truth; the db just caches what sync needs to know about it. Before every sync, a scan reconciles the two: a file that’s new or has a changed mtime is re-hashed and marked dirty if its content really changed, and a db row whose file is gone becomes a deletion tombstone. Two mtime tricks keep this cheap: the folder’s own mtime (stored in <code>dirMod</code>, milliseconds) skips the whole scan when no directory entry changed, and per-file mtimes (seconds, matching Anki’s db format) decide what to re-hash. Some files can never sync, so the scan ignores them: names that aren’t valid NFC (macOS lists names in NFD; they’re treated as their NFC form when that form is valid), <code>thumbs.db</code>/<code>.ds_store</code>, empty files, and files over 100MiB.</p>
+<p>The scenario below is Anki’s own change-tracking test: add, modify, delete, with a “touched but unchanged” case in the middle proving a bare mtime bump doesn’t cause a pointless upload. Since scans compare against the <em>stored</em> folder mtime, the test backdates mtimes rather than sleeping through the clock’s resolution:</p>
+<div id="18027dde" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _backdate(p):</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    t <span class="op">=</span> p.stat().st_mtime <span class="op">-</span> <span class="dv">3</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    os.utime(p, (t, t))</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>trk <span class="op">=</span> Media(td<span class="op">/</span><span class="st">'trk'</span><span class="op">/</span><span class="st">'media'</span>, td<span class="op">/</span><span class="st">'trk'</span><span class="op">/</span><span class="st">'collection.mdb'</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>f1 <span class="op">=</span> trk.folder<span class="op">/</span><span class="st">'file.jpg'</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>f1.write_bytes(<span class="st">b'hello'</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>trk._register_changes()</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>test_eq(trk.count(), <span class="dv">1</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>test_eq(trk.entry(<span class="st">'file.jpg'</span>), (_sha1(<span class="st">b'hello'</span>), _mtime_s(f1), <span class="dv">1</span>))</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>trk.set_entry(<span class="st">'file.jpg'</span>, _sha1(<span class="st">b'hello'</span>), _mtime_s(f1), <span class="va">False</span>)     <span class="co"># as if it synced</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>os.utime(f1)<span class="op">;</span> _backdate(trk.folder)</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>trk._register_changes()</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>test_eq(trk.entry(<span class="st">'file.jpg'</span>)[<span class="dv">2</span>], <span class="dv">0</span>)                                <span class="co"># touched, content unchanged: still clean</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>f1.write_bytes(<span class="st">b'hello1'</span>)<span class="op">;</span> _backdate(f1)<span class="op">;</span> _backdate(trk.folder)</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>trk._register_changes()</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>test_eq(trk.entry(<span class="st">'file.jpg'</span>), (_sha1(<span class="st">b'hello1'</span>), _mtime_s(f1), <span class="dv">1</span>))</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>trk.set_entry(<span class="st">'file.jpg'</span>, _sha1(<span class="st">b'hello1'</span>), _mtime_s(f1), <span class="va">False</span>)</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>(trk.folder<span class="op">/</span><span class="st">'Thumbs.db'</span>).write_bytes(<span class="st">b'x'</span>)                          <span class="co"># never syncs</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>(trk.folder<span class="op">/</span><span class="st">'empty.gif'</span>).touch()                                    <span class="co"># nor do empty files</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>f1.unlink()<span class="op">;</span> _backdate(trk.folder)</span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>trk._register_changes()</span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>test_eq(trk.count(), <span class="dv">0</span>)</span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>test_eq(trk.entry(<span class="st">'file.jpg'</span>), (<span class="va">None</span>, <span class="dv">0</span>, <span class="dv">1</span>))                        <span class="co"># a deletion tombstone, awaiting upload</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>trk.pending(<span class="dv">25</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>[('file.jpg', None, 0)]</code></pre>
+</div>
+</div>
+</section>
+<section id="zips-on-the-wire" class="level2">
+<h2 class="anchored" data-anchor-id="zips-on-the-wire">Zips on the wire</h2>
+<p>Files travel in zip batches, stored uncompressed. Each zip holds at most 25 files and stops accepting more once ~2.5MB has accumulated. Members are named <code>0</code>, <code>1</code>, … with a <code>_meta</code> JSON member mapping them to real filenames - but the two directions differ: an upload’s <code>_meta</code> is a list of <code>[filename, zip_name]</code> pairs where a null zip name means “this file was deleted”, while a download’s is a plain <code>{zip_name: filename}</code> dict (deletions never travel downward as zip entries; the change list already said what to delete).</p>
+<div id="546d612c" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>up <span class="op">=</span> _zip_up([(<span class="st">'a.jpg'</span>, <span class="st">b'aaa'</span>), (<span class="st">'gone.mp3'</span>, <span class="va">None</span>), (<span class="st">'b.png'</span>, <span class="st">b'bb'</span>)])</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> zipfile.ZipFile(io.BytesIO(up)) <span class="im">as</span> z:</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    test_eq(json.loads(z.read(<span class="st">'_meta'</span>)), [[<span class="st">'a.jpg'</span>, <span class="st">'0'</span>], [<span class="st">'gone.mp3'</span>, <span class="va">None</span>], [<span class="st">'b.png'</span>, <span class="st">'2'</span>]])</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    test_eq(z.read(<span class="st">'0'</span>), <span class="st">b'aaa'</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>down <span class="op">=</span> io.BytesIO()</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> zipfile.ZipFile(down, <span class="st">'w'</span>, zipfile.ZIP_STORED) <span class="im">as</span> z:      <span class="co"># what a server download looks like</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    z.writestr(<span class="st">'0'</span>, <span class="st">b'data0'</span>)<span class="op">;</span> z.writestr(<span class="st">'_meta'</span>, json.dumps({<span class="st">'0'</span>:<span class="st">'pic.jpg'</span>}))</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>got <span class="op">=</span> _unzip_down(down.getvalue())</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>test_eq(got, [(<span class="st">'pic.jpg'</span>, <span class="st">b'data0'</span>)])</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>got</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<pre><code>[('pic.jpg', b'data0')]</code></pre>
+</div>
+</div>
+<p><code>_gather_zip</code> reads the pending entries’ current bytes, honoring the size cutoff, uploading a since-vanished file as a deletion, and pruning entries that can never upload (the batch is then rebuilt from the db):</p>
+<div id="6b8c4d36" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>gz <span class="op">=</span> Media(td<span class="op">/</span><span class="st">'gz'</span><span class="op">/</span><span class="st">'media'</span>, td<span class="op">/</span><span class="st">'gz'</span><span class="op">/</span><span class="st">'collection.mdb'</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>): (gz.folder<span class="op">/</span><span class="ss">f'big</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">.bin'</span>).write_bytes(<span class="bu">bytes</span>(<span class="dv">1500_000</span>))</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>(gz.folder<span class="op">/</span><span class="st">'small.txt'</span>).write_bytes(<span class="st">b'hi'</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>gz._register_changes()</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>got <span class="op">=</span> gz._gather_zip([(<span class="ss">f'big</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">.bin'</span>, _sha1(<span class="bu">bytes</span>(<span class="dv">1500_000</span>)), <span class="dv">0</span>) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>)])</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>test_eq([f <span class="cf">for</span> f,_ <span class="kw">in</span> got], [<span class="st">'big0.bin'</span>, <span class="st">'big1.bin'</span>])               <span class="co"># 2.5MB cutoff: third file waits for the next batch</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>got <span class="op">=</span> gz._gather_zip([(<span class="st">'small.txt'</span>, _sha1(<span class="st">b'hi'</span>), <span class="dv">0</span>), (<span class="st">'vanished.png'</span>, <span class="st">'deadbeef'</span>, <span class="dv">0</span>), (<span class="st">'del.png'</span>, <span class="va">None</span>, <span class="dv">0</span>)])</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>test_eq(got, [(<span class="st">'small.txt'</span>, <span class="st">b'hi'</span>), (<span class="st">'vanished.png'</span>, <span class="va">None</span>), (<span class="st">'del.png'</span>, <span class="va">None</span>)])   <span class="co"># missing file -&gt; uploaded as deletion</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>gz.set_entry(<span class="st">'empty.bin'</span>, _sha1(<span class="st">b''</span>), <span class="dv">1</span>, <span class="va">True</span>)                      <span class="co"># a zero-byte file can never upload</span></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>(gz.folder<span class="op">/</span><span class="st">'empty.bin'</span>).touch()</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>test_is(gz._gather_zip([(<span class="st">'empty.bin'</span>, _sha1(<span class="st">b''</span>), <span class="dv">1</span>)]), <span class="va">None</span>)       <span class="co"># pruned; batch must be rebuilt...</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>test_eq([f <span class="cf">for</span> f,_,_ <span class="kw">in</span> gz.pending(<span class="dv">25</span>)], [<span class="st">'big0.bin'</span>, <span class="st">'big1.bin'</span>, <span class="st">'big2.bin'</span>, <span class="st">'small.txt'</span>])   <span class="co"># ...without it</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="talking-to-the-server" class="level2">
+<h2 class="anchored" data-anchor-id="talking-to-the-server">Talking to the server</h2>
+<p>Media endpoints live under <code>msync/</code> beside the collection sync’s <code>sync/</code>, and use the very same envelope (zstd body, <code>anki-sync</code> header), so <a href="https://AnswerDotAI.github.io/fastanki/syncer.html#syncserver"><code>SyncServer</code></a> handles them via its <code>prefix</code> argument. Two quirks are media-specific: JSON replies arrive wrapped in a legacy <code>{"data": ..., "err": ""}</code> envelope, and some payloads are JSON <em>arrays</em> rather than objects (Rust’s <code>serde_tuple</code>): each change-list row is <code>[fname, usn, sha1]</code>, and an upload reply is <code>[processed, current_usn]</code>. The five methods are <code>begin</code> (returns the server’s current media usn), <code>mediaChanges</code>, <code>downloadFiles</code>, <code>uploadChanges</code>, and <code>mediaSanity</code>.</p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/media.py#L192" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="mediasanityfailed" class="level3">
+<h3 class="anchored" data-anchor-id="mediasanityfailed">MediaSanityFailed</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> MediaSanityFailed(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="op">*</span>args, <span class="op">**</span>kwargs</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Common base class for all non-exit exceptions.</em></p>
+</section>
+</section>
+<section id="deciding-what-to-do-with-a-server-change" class="level2">
+<h2 class="anchored" data-anchor-id="deciding-what-to-do-with-a-server-change">Deciding what to do with a server change</h2>
+<p>Each change-list row names a file and the sha1 it now has on the server (empty means deleted there). Against our db entry - its checksum, and whether it’s pending upload - there are exactly nine cases, and Anki’s <code>changes.rs</code> resolves them with three rules: a genuine content conflict favors the server (the loser’s bytes are already gone from the server’s history either way); a local pending <em>addition</em> survives a remote deletion (it’ll upload next); and matching sides just tidy the dirty flag. We keep the decision as a pure function of <code>(local sha1, remote sha1, state)</code>, with Anki’s own test table pinning all nine cases below.</p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/media.py#L202" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="required_change" class="level3">
+<h3 class="anchored" data-anchor-id="required_change">required_change</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> required_change(</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    local, remote, state</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Resolve one server row: sha1s (’’ means deleted), <code>state</code> in none/clean/dirty -&gt; None, ‘download’, ‘delete’, or ‘clean’</em></p>
+<div id="0adddc95" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> args,exp <span class="kw">in</span> [((<span class="st">''</span>,<span class="st">''</span>,<span class="st">'none'</span>),<span class="va">None</span>),      ((<span class="st">''</span>,<span class="st">''</span>,<span class="st">'clean'</span>),<span class="st">'delete'</span>),   ((<span class="st">''</span>,<span class="st">'1'</span>,<span class="st">'dirty'</span>),<span class="st">'download'</span>),</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>                 ((<span class="st">'1'</span>,<span class="st">''</span>,<span class="st">'dirty'</span>),<span class="va">None</span>),    ((<span class="st">'1'</span>,<span class="st">''</span>,<span class="st">'clean'</span>),<span class="st">'delete'</span>),  ((<span class="st">'1'</span>,<span class="st">'1'</span>,<span class="st">'clean'</span>),<span class="va">None</span>),</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>                 ((<span class="st">'1'</span>,<span class="st">'1'</span>,<span class="st">'dirty'</span>),<span class="st">'clean'</span>),((<span class="st">'a'</span>,<span class="st">'b'</span>,<span class="st">'dirty'</span>),<span class="st">'download'</span>),((<span class="st">'a'</span>,<span class="st">'b'</span>,<span class="st">'clean'</span>),<span class="st">'download'</span>)]:</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    test_eq(required_change(<span class="op">*</span>args), exp)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="files-in-and-out" class="level2">
+<h2 class="anchored" data-anchor-id="files-in-and-out">Files in and out</h2>
+<p>Applying a remote deletion moves the file to a <code>media.trash</code> folder beside the media folder rather than unlinking it, exactly as Anki does - a sync bug then costs a manual restore, not data. Incoming files normally write straight to the folder, but AnkiWeb still holds pre-normalization filenames from old clients; such a file is stored under a corrected name, and two dirty entries record the fixup for the next upload: a tombstone for the server’s bad name, and the renamed file itself.</p>
+<div id="b7016392" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>tf <span class="op">=</span> Media(td<span class="op">/</span><span class="st">'tf'</span><span class="op">/</span><span class="st">'media'</span>, td<span class="op">/</span><span class="st">'tf'</span><span class="op">/</span><span class="st">'collection.mdb'</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>test_eq(tf._add_from_server(<span class="st">'ok.png'</span>, <span class="st">b'fine'</span>), [(<span class="st">'ok.png'</span>, _sha1(<span class="st">b'fine'</span>), _mtime_s(tf.folder<span class="op">/</span><span class="st">'ok.png'</span>), <span class="va">False</span>)])</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>bad <span class="op">=</span> <span class="st">'we|ird.png'</span>                                                   <span class="co"># a name today's Anki would never create</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>test_eq(tf._add_from_server(bad, <span class="st">b'x'</span>), [(bad, <span class="va">None</span>, <span class="dv">0</span>, <span class="va">True</span>), (<span class="st">'weird.png'</span>, _sha1(<span class="st">b'x'</span>), _mtime_s(tf.folder<span class="op">/</span><span class="st">'weird.png'</span>), <span class="va">True</span>)])</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>tf._trash_files([<span class="st">'ok.png'</span>, <span class="st">'never-existed.png'</span>])</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>test_eq((tf.folder<span class="op">/</span><span class="st">'ok.png'</span>).exists(), <span class="va">False</span>)</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>test_eq((tf.folder.with_name(<span class="st">'media.trash'</span>)<span class="op">/</span><span class="st">'ok.png'</span>).read_bytes(), <span class="st">b'fine'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="the-sync-procedure" class="level2">
+<h2 class="anchored" data-anchor-id="the-sync-procedure">The sync procedure</h2>
+<p>A media sync is: scan the folder, learn the server’s usn (<code>begin</code>, unless the caller already has it from the collection sync’s <code>meta</code>), pull whatever the server has that we haven’t seen, push whatever’s dirty, and - only if anything actually moved - ask the server to compare file counts. Pulling loops over change batches, applying each in one db transaction that also advances <code>lastUsn</code>, so an interrupted sync resumes where it stopped. Pushing has one subtlety: after an upload the server reports its new usn, and we may adopt it as “caught up” only when it’s exactly our old usn plus the files we sent - anything else means another client uploaded concurrently, and we must leave <code>lastUsn</code> alone so the next pull fetches their changes. A failed count check clears the local db and errors, making the next sync re-list everything against the server - Anki’s own recovery path.</p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/media.py#L246" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="media.sync" class="level3">
+<h3 class="anchored" data-anchor-id="media.sync">Media.sync</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> sync(</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    srv, server_usn:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Sync the media folder with <code>srv</code>: pull server changes, push local ones, then verify counts</em></p>
+</section>
+</section>
+<section id="media-on-a-collection" class="level2">
+<h2 class="anchored" data-anchor-id="media-on-a-collection">Media on a Collection</h2>
+<p><a href="https://AnswerDotAI.github.io/fastanki/collection.html#collection"><code>Collection</code></a> gets three conveniences: <code>media()</code> opens the collection’s own media folder and db (a context manager, like <a href="https://AnswerDotAI.github.io/fastanki/collection.html#collection"><code>Collection</code></a> itself), <a href="https://AnswerDotAI.github.io/fastanki/core.html#add_media"><code>add_media</code></a> copies data in and returns the filename to cite in a note field - <code>&lt;img src="name"&gt;</code> for pictures, <code>[sound:name]</code> for audio - and <code>sync_media</code> runs a media sync with the saved auth. With this, the one safety rule from the days before media support (“never reference a file we can’t upload”) is discharged: referencing what <a href="https://AnswerDotAI.github.io/fastanki/core.html#add_media"><code>add_media</code></a> returns is always syncable.</p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/media.py#L317" target="_blank" style="float:right; font-size:smaller">source</a></p>
+<section id="collection.sync_media" class="level3">
+<h3 class="anchored" data-anchor-id="collection.sync_media">Collection.sync_media</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> sync_media(</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    srv:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Media-sync with <code>srv</code> (default: the saved auth from a previous <a href="https://AnswerDotAI.github.io/fastanki/core.html#sync"><code>sync</code></a>)</em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/media.py#L310" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="collection.add_media" class="level3">
+<h3 class="anchored" data-anchor-id="collection.add_media">Collection.add_media</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> add_media(</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">file</span>, fname:NoneType<span class="op">=</span><span class="va">None</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>):</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>Copy <code>file</code> (a path, or bytes with <code>fname</code>) into the media folder; returns the name to reference in note fields</em></p>
+<hr>
+<p><a href="https://github.com/AnswerDotAI/fastanki/blob/main/fastanki/media.py#L305" target="_blank" style="float:right; font-size:smaller">source</a></p>
+</section>
+<section id="collection.media" class="level3">
+<h3 class="anchored" data-anchor-id="collection.media">Collection.media</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> media():</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><em>This collection’s <a href="https://AnswerDotAI.github.io/fastanki/media.html#media"><code>Media</code></a>; close it after use (or use as a context manager)</em></p>
+<div id="338502dc" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>col <span class="op">=</span> Collection.<span class="bu">open</span>(td<span class="op">/</span><span class="st">'ex'</span><span class="op">/</span><span class="st">'collection.anki2'</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>name <span class="op">=</span> col.add_media(<span class="st">b'not really a png'</span>, <span class="st">'diagram.png'</span>)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> col.add(Front<span class="op">=</span><span class="ss">f'What does this show? &lt;img src="</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">"&gt;'</span>, Back<span class="op">=</span><span class="st">'the architecture'</span>)</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>test_eq(name, <span class="st">'diagram.png'</span>)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>test_eq((td<span class="op">/</span><span class="st">'ex'</span><span class="op">/</span><span class="st">'collection.media'</span><span class="op">/</span>name).read_bytes(), <span class="st">b'not really a png'</span>)</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> col.media() <span class="im">as</span> cm:</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    cm._register_changes()</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    test_eq(cm.pending(<span class="dv">25</span>), [(name, _sha1(<span class="st">b'not really a png'</span>), _mtime_s(td<span class="op">/</span><span class="st">'ex'</span><span class="op">/</span><span class="st">'collection.media'</span><span class="op">/</span>name))])</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>col.close()</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>n</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display cell-output-markdown">
+<div class="prose" data-markdown="1">
+<p><strong>Front</strong>: What does this show? <img src="diagram.png"> | <strong>Back</strong>: the architecture | 🏷 -</p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="against-a-real-server" class="level2">
+<h2 class="anchored" data-anchor-id="against-a-real-server">Against a real server</h2>
+<p>The same arrangement as the syncer notebook: the <code>anki</code> wheel’s genuine sync server on localhost, with Anki itself playing second client - its media sync runs in a backend thread, so we poll <code>media_sync_status</code> (which also rethrows any error). These cells are <code>eval: false</code> because they need the server process; <code>tests/test_sync.py</code> runs this sequence, plus batching and count-check-failure cases, under pytest.</p>
+<div id="17c49f9c" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="3a69e1d4" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>server, EP <span class="op">=</span> start_sync_server(td<span class="op">/</span><span class="st">'server'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="4b681db2" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>mcol <span class="op">=</span> Collection.<span class="bu">open</span>(td<span class="op">/</span><span class="st">'sync'</span><span class="op">/</span><span class="st">'collection.anki2'</span>)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>img <span class="op">=</span> mcol.add_media(<span class="st">b'PNG our image'</span>, <span class="st">'pic.png'</span>)</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>mcol.add(Front<span class="op">=</span><span class="ss">f'What is this? &lt;img src="</span><span class="sc">{</span>img<span class="sc">}</span><span class="ss">"&gt;'</span>, Back<span class="op">=</span><span class="st">'our pic'</span>)</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>mcol.sync(user<span class="op">=</span><span class="st">'tester'</span>, passw<span class="op">=</span><span class="st">'s3kret'</span>, endpoint<span class="op">=</span>EP, upload<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>mcol.sync_media()</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>mcol.sync_media()      <span class="co"># caught up: a no-op</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Anki pulls the collection and then the media, and both sides of the story check out: the bytes match, and its media check finds every reference resolved:</p>
+<div id="fc8fc341" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>(td<span class="op">/</span><span class="st">'sync2'</span>).mkdir()</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>moc <span class="op">=</span> AnkiCollection(<span class="bu">str</span>(td<span class="op">/</span><span class="st">'sync2'</span><span class="op">/</span><span class="st">'collection.anki2'</span>))</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>auth <span class="op">=</span> moc.sync_login(<span class="st">'tester'</span>, <span class="st">'s3kret'</span>, endpoint<span class="op">=</span>EP)</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>st <span class="op">=</span> moc.sync_collection(auth, sync_media<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>moc.close_for_full_sync()</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>moc.full_upload_or_download(auth<span class="op">=</span>auth, server_usn<span class="op">=</span>st.server_media_usn, upload<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>moc.reopen(after_full_sync<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>moc.sync_media(auth)</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> moc.media_sync_status().active: time.sleep(<span class="fl">0.05</span>)</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>test_eq(Path(moc.media.<span class="bu">dir</span>(), <span class="st">'pic.png'</span>).read_bytes(), <span class="st">b'PNG our image'</span>)</span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>chk <span class="op">=</span> moc.media.check()</span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>test_eq((<span class="bu">list</span>(chk.missing), <span class="bu">list</span>(chk.unused)), ([], []))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Then the reverse direction: Anki adds a file and deletes ours, and one <code>sync_media</code> brings us both changes - their audio arrives, and our deleted picture moves to <code>media.trash</code>, leaving a clean sync state:</p>
+<div id="adf2963a" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>(td<span class="op">/</span><span class="st">'oracle.mp3'</span>).write_bytes(<span class="st">b'ORACLE AUDIO'</span>)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>oname <span class="op">=</span> moc.media.add_file(<span class="bu">str</span>(td<span class="op">/</span><span class="st">'oracle.mp3'</span>))</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>moc.media.trash_files([<span class="st">'pic.png'</span>])</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>moc.sync_media(auth)</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> moc.media_sync_status().active: time.sleep(<span class="fl">0.05</span>)</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>mcol.sync_media()</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> mcol.media() <span class="im">as</span> m:</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>    test_eq((m.folder<span class="op">/</span>oname).read_bytes(), <span class="st">b'ORACLE AUDIO'</span>)</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>    test_eq((m.folder<span class="op">/</span><span class="st">'pic.png'</span>).exists(), <span class="va">False</span>)</span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>    test_eq((m.folder.with_name(<span class="st">'media.trash'</span>)<span class="op">/</span><span class="st">'pic.png'</span>).exists(), <span class="va">True</span>)</span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>    test_eq((m.pending(<span class="dv">25</span>), m.count()), ([], <span class="dv">1</span>))</span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>moc.close()</span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>mcol.close()</span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>server.terminate()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/AnswerDotAI\.github\.io\/fastanki");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+<footer class="footer"><div class="nav-footer"><div class="nav-footer-center"><div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/AnswerDotAI/fastanki/issues/new" class="toc-action"><i class="bi bi-github"></i>Report an issue</a></li></ul></div></div></div></footer></body></html>
