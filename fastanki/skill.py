@@ -10,7 +10,7 @@ built on the pyskills registry (such as safepyrun) trust fastanki's own operatio
 ## Workflow
 
 - `add_fb_card(Front='...', Back='...')` — create a Basic card (use `deck=`, `tags=`, `model=` to customize)
-- `add_card`(model='...', deck='...', Front='...', Back='...', example='...')) - create a card using a specific note type (`model=`) with optional custom fields (such as `example=`)
+- `add_card(model='...', deck='...', Front='...', Back='...', example='...')` - create a card using a specific note type (`model=`) with optional custom fields (such as `example=`)
 - `find_cards(deck='Math')` / `find_notes(deck='Math')` — search by deck, tag, field substring, or due status
 - `get_note(id)` — retrieve a single note by ID
 - `update_fb_note(id, Front='...')` — modify fields; `add_tags='tag'` adds tags without replacing
