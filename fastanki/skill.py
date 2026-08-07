@@ -10,6 +10,7 @@ built on the pyskills registry (such as safepyrun) trust fastanki's own operatio
 ## Workflow
 
 - `add_fb_card(Front='...', Back='...')` — create a Basic card (use `deck=`, `tags=`, `model=` to customize)
+- `add_card`(model='...', deck='...', Front='...', Back='...', example='...')) - create a card using a specific note type (`model=`) with optional custom fields (such as `example=`)
 - `find_cards(deck='Math')` / `find_notes(deck='Math')` — search by deck, tag, field substring, or due status
 - `get_note(id)` — retrieve a single note by ID
 - `update_fb_note(id, Front='...')` — modify fields; `add_tags='tag'` adds tags without replacing
@@ -91,6 +92,6 @@ The student corrected a proposal to combine two rules into one card:
 from fastanki.core import *
 from pyskills import allow
 
-__all__ = ['add_fb_card', 'add_media', 'find_notes', 'find_note_ids', 'find_cards', 'find_card_ids', 'get_note', 'del_note', 'update_fb_note', 'sync']
+__all__ = ['add_fb_card', 'add_card', 'add_media', 'find_notes', 'find_note_ids', 'find_cards', 'find_card_ids', 'get_note', 'del_note', 'update_fb_note', 'sync']
 
 allow({'fastanki.*': ...})
