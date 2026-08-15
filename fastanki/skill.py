@@ -1,4 +1,4 @@
-"""Anki flashcard tools for LLM-driven spaced repetition. Direct sqlite + AnkiWeb sync, no Anki app needed.
+"""Anki flashcard tools for spaced repetition. Direct sqlite and AnkiWeb sync, with no Anki app needed.
 
 fastanki reads and writes Anki's collection format and speaks the AnkiWeb sync protocol
 directly in Python. Cards live in a local sqlite file and reach desktop/phone via AnkiWeb
