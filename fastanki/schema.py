@@ -161,13 +161,17 @@ def unicase(a:str, b:str):
     a,b = a.casefold(),b.casefold()
     return -1 if a<b else (1 if a>b else 0)
 
+def _add_unicase(con): con.create_collation('unicase', unicase)
+
+if _add_unicase.__name__ not in [h.__name__ for h in apsw.connection_hooks]:
+    apsw.connection_hooks.insert(0, _add_unicase) # in case `bestpractice.connect_optimize` is included
+
 def connect(path):
     "Connect to collection sqlite file at `path`, with Anki's `unicase` collation and apsw best practices"
     con = apsw.Connection(str(path))
     bestpractice.connection_busy_timeout(con)  # first, so the WAL pragma and every later write wait for the lock rather than erroring
     bestpractice.connection_wal(con)           # WAL journal mode
     bestpractice.connection_dqs(con)           # double quotes are identifiers only; SQL string literals must use single quotes
-    con.create_collation('unicase', unicase)
     return con
 
 # %% ../nbs/00_schema.ipynb #164a8cae
