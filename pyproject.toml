@@ -15,7 +15,7 @@ classifiers = ["Natural Language :: English", "Intended Audience :: Developers",
 dependencies = ['fastcore', 'httpx', 'zstandard', 'protobuf>=6.31', 'apsw']
 
 [project.optional-dependencies]
-dev = ['anki', 'pytest', 'pytest-timeout', 'fastcore>=2.1.18']
+dev = ['anki', 'pytest', 'pytest-timeout', 'fastcore>=2.1.18', 'apswutils']
 
 
 [project.urls]
