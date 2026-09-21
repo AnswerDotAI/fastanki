@@ -21,12 +21,12 @@ built on the pyskills registry (such as safepyrun) trust fastanki's own operatio
 ## Flashcard principles for mathematics
 
 1. Understand before you memorize — only card things you've already worked through.
-2. One fact per card — split complex topics into atomic Q&A pairs.
+2. Split complex topics into cards that each test one fact.
 3. Test both directions — for key relationships, card formula→name and name→formula.
-4. Include worked examples — card the *steps* of a representative problem, not just the result.
-5. Combat interference — when two formulas look alike, make dedicated cards highlighting the difference.
-6. Connect to the big picture — periodically create summary cards that anchor facts to structure.
-7. Card the "why," not just the "what" — ask for the reasoning behind a rule, not only the bare fact.
+4. Use cards to test the steps of a worked example.
+5. When two formulas look alike, make cards that ask how they differ.
+6. Occasionally make a summary card about a relationship between ideas. For example, ask how the distributive property explains why minus times minus is plus.
+7. Ask why a rule works.
 8. Card derivation steps separately — break multi-step derivations into a chain of step-cards.
 
 ## Example: creating precalculus cards
