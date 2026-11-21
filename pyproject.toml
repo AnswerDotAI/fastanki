@@ -39,6 +39,7 @@ include = ["fastanki*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-p timeout"
 
 [tool.nbdev]
 allowed_metadata_keys = ['solveit']
